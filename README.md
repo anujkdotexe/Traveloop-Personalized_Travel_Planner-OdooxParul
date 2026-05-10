@@ -1,102 +1,136 @@
 # Traveloop — Personalized Travel Planner
 
-Traveloop is an all-in-one travel companion designed to simplify trip planning, budget management, and itinerary organization. From building multi-stop journeys to tracking every penny spent, Traveloop provides a premium, interactive experience for modern travelers.
+Traveloop is a full-stack travel planning platform for building multi-stop itineraries, tracking budgets, and sharing trips.
 
 ## 🚀 Features
 
-- **Dynamic Itinerary Builder**: Plan multi-city trips with drag-and-drop ease.
-- **Financial Command Center**: Real-time budget tracking and automated invoice generation.
-- **Trip Journal**: Record memories and important notes for every destination.
-- **Smart Checklists**: Never forget an item with categorized packing lists.
-- **Community Feed**: Share your adventures and discover top destinations.
-- **Admin Dashboard**: Powerful analytics and platform management tools.
+- Dynamic itinerary planning with ordered city stops.
+- Budget tracking and expense summaries.
+- Trip journal and packing checklists.
+- Public sharing and community discovery.
+- Admin analytics for platform insights.
 
-## 🛠️ Technology Stack
+## Technology Stack
 
-- **Frontend**: React, Chart.js, Vite
-- **Backend**: Node.js, Express, JWT
-- **Database**: PostgreSQL (UUID based schema)
-- **Deployment**: Vercel & Render
+- Frontend: React + Vite, CSS3, SVG-only iconography
+- Backend: Node.js, Express.js
+- Database: PostgreSQL with UUID primary keys
+- Security: JWT authentication, bcrypt password hashing, RBAC
 
-## 📖 Documentation
+## Design Philosophy: "Premium Voyage"
 
-Detailed technical documentation is available in the `/docs` directory:
+- Zero emoji policy in UI assets.
+- Indigo-first palette with Teal and Rose accents.
+- Clean, wireframe-aligned layouts.
+- Outfit font for a modern premium feel.
 
-- [System Architecture](docs/ARCHITECTURE.md)
-- [API Reference](docs/API.md)
-- [Database Schema](docs/DATABASE.md)
+## Documentation
 
-## ✅ Requirements
 
-### Prerequisites
-- Node.js (v18+)
-- PostgreSQL (v14+)
-- npm (ships with Node.js)
+- [Architecture](docs/ARCHITECTURE.md)
 
-### Recommended Tooling
-- VS Code with ESLint extension
-- Postman or curl for API testing
+## Requirements
 
-## 🚦 Setup
+- Node.js 18+
+- npm 9+
+- PostgreSQL 13+
+- A valid `JWT_SECRET` for token signing
 
-### 1. Clone and enter the project
+## Setup Instructions
 
-```bash
-git clone https://github.com/anujkdotexe/Traveloop-Personalized_Travel_Planner-OdooxParul.git
-cd Traveloop-Personalized_Travel_Planner-OdooxParul
+### 1. Database
+Execute `server/db/schema.sql` in your PostgreSQL instance.
+
+### 2. Environment
+Create `server/.env` with the following:
+
+```env
+DB_HOST=localhost
+DB_USER=postgres
+DB_PASSWORD=yourpassword
+DB_NAME=traveloop
+DB_PORT=5432
+JWT_SECRET=your_jwt_secret_here
+PORT=5000
 ```
 
-### 2. Configure and run backend
+### 3. Install Dependencies
 
 ```bash
 cd server
 npm install
-cp .env.example .env
-```
 
-Update `.env` values for your local PostgreSQL instance (especially `DB_*` fields and `JWT_SECRET`), then start the API:
-
-```bash
-npm run dev
-```
-
-The backend runs at `http://localhost:5000` by default.
-
-### 3. Run frontend
-
-In a new terminal:
-
-```bash
-cd client
+cd ../client
 npm install
+```
+
+### 4. Run Locally
+
+```bash
+# Backend
+cd server
+node server.js
+
+# Frontend
+cd ../client
 npm run dev
 ```
 
-The frontend runs at `http://localhost:5173` by default.
+The frontend runs on `http://localhost:5173` and the backend runs on `http://localhost:5000`.
 
-## 🔌 API Usage
+## API Endpoints
 
-Base URL (local): `http://localhost:5000`
+### Auth (Public)
+- POST `/api/auth/register`
+- POST `/api/auth/login`
 
-### Register
+### Trips (Authenticated Users)
+- GET `/api/trips`
+- POST `/api/trips`
+- POST `/api/trips/stop`
+
+### Admin (Admin Role Only)
+- GET `/api/admin/analytics`
+
+## API Usage Examples
+
+### Register a user
 
 ```bash
 curl -X POST http://localhost:5000/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"name":"Demo User","email":"demo@example.com","password":"Password123!"}'
+  -d '{"name":"Demo User","email":"demo@example.com","password":"Pass@123"}'
 ```
 
-### Login
+### Login and get token
 
 ```bash
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"demo@example.com","password":"Password123!"}'
+  -d '{"email":"demo@example.com","password":"Pass@123"}'
 ```
 
-Use the returned JWT in the `Authorization: Bearer <token>` header for protected endpoints.
+### Fetch authenticated trips
 
-For full endpoint coverage, see [API Reference](docs/API.md).
+```bash
+curl http://localhost:5000/api/trips \
+  -H "Authorization: Bearer <JWT_TOKEN>"
+```
 
-## 📜 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## Demo Access
+
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| Admin | `admin@traveloop.com` | `Demo@1234` |
+| User | `demo@traveloop.com` | `Demo@1234` |
+
+## Team
+
+- Anuj Kondawar: Lead, Integration, Auth Flow
+- Chirag Bhayal: Frontend, 14 Screens, SVG Assets
+- Raghav Dadhich: Backend API, Validation, Sharing Logic
+- Tirupati Behera: Database Schema, Budget Engine, Data Seeding
+
+## Hackathon Context
+
+Traveloop was developed for the OdooxParul hackathon with a focus on polished UI, relational data modeling, and a production-ready full-stack structure.
