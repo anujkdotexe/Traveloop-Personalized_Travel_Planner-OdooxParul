@@ -1,3 +1,10 @@
+/**
+ * @file authRoutes.js
+ * @description Defines public authentication endpoints for user registration and login.
+ * No middleware required - endpoints are open to all users.
+ * @author Traveloop Team
+ */
+
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
