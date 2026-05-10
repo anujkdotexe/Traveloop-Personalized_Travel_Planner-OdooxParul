@@ -12,7 +12,6 @@ A full-stack travel planning platform built with **React + Vite** (frontend) and
 - PostgreSQL 14+
 
 ### 1. Clone and install
-
 ```bash
 git clone https://github.com/<your-org>/OdooxParul.git
 cd OdooxParul
