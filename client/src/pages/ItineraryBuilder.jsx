@@ -69,6 +69,32 @@ export default function ItineraryBuilder() {
   const country = activeStop?.country || 'India';
 
 
+  const moveStop = async (stopId, direction) => {
+    const idx = stops.findIndex(s => s.id === stopId);
+    if (direction === 'up' && idx === 0) return;
+    if (direction === 'down' && idx === stops.length - 1) return;
+
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    const stopA = stops[idx];
+    const stopB = stops[targetIdx];
+
+    try {
+      await Promise.all([
+        fetch(`/api/trips/stop/${stopA.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ sequence_order: stopB.sequence_order })
+        }),
+        fetch(`/api/trips/stop/${stopB.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ sequence_order: stopA.sequence_order })
+        })
+      ]);
+      fetchTrip();
+    } catch (err) { showToast('Failed to reorder stops.', 'error'); }
+  };
+
   const handleAddStop = async (city) => {
     try {
       const res = await fetch('/api/trips/stop', {
@@ -143,15 +169,21 @@ export default function ItineraryBuilder() {
             <button className="btn btn-ghost btn-icon-sm" onClick={() => setSearchModal('city')}><PlusIcon /></button>
           </div>
           {stops.map(s => (
-            <button key={s.id} onClick={() => setActiveStopId(s.id)} style={{ width: '100%', background: activeStopId === s.id ? 'var(--bg-surface-alt)' : 'transparent', border: `1.5px solid ${activeStopId === s.id ? 'var(--primary)' : 'transparent'}`, borderRadius: 'var(--radius-md)', padding: '1rem', marginBottom: '0.75rem', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}>
-              <div className="flex items-center gap-sm">
-                <span style={{ color: activeStopId === s.id ? 'var(--primary)' : 'var(--border)' }}><MapPinIcon /></span>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}>{s.city_name}, {s.country}</div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{new Date(s.arrival_date).toLocaleDateString()} &mdash; {new Date(s.departure_date).toLocaleDateString()}</div>
+            <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.75rem' }}>
+              <button onClick={() => setActiveStopId(s.id)} style={{ flex: 1, background: activeStopId === s.id ? 'var(--bg-surface-alt)' : 'transparent', border: `1.5px solid ${activeStopId === s.id ? 'var(--primary)' : 'transparent'}`, borderRadius: 'var(--radius-md)', padding: '1rem', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}>
+                <div className="flex items-center gap-sm">
+                  <span style={{ color: activeStopId === s.id ? 'var(--primary)' : 'var(--border)' }}><MapPinIcon /></span>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}>{s.city_name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(s.arrival_date).toLocaleDateString()}</div>
+                  </div>
                 </div>
+              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <button className="btn btn-ghost btn-icon-sm" onClick={() => moveStop(s.id, 'up')} style={{ padding: 4 }}><svg className="icon icon-sm" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></button>
+                <button className="btn btn-ghost btn-icon-sm" onClick={() => moveStop(s.id, 'down')} style={{ padding: 4 }}><svg className="icon icon-sm" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
               </div>
-            </button>
+            </div>
           ))}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <button onClick={() => setSearchModal('city')} style={{ width: '100%', border: '2px dashed var(--border)', borderRadius: 'var(--radius-md)', padding: '0.75rem', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>

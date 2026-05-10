@@ -37,7 +37,14 @@ export default function Signup() {
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: `${form.firstName} ${form.lastName}`, email: form.email, password: form.password }),
+        body: JSON.stringify({ 
+          name: `${form.firstName} ${form.lastName}`, 
+          email: form.email, 
+          password: form.password,
+          phone: form.phone,
+          city: form.city,
+          country: form.country
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);

@@ -1,15 +1,14 @@
 const countryToCurrency = {
-  'India': 'INR',
-  'USA': 'USD',
-  'United Kingdom': 'GBP',
-  'France': 'EUR',
-  'Germany': 'EUR',
-  'Japan': 'JPY',
-  'Australia': 'AUD',
-  'Canada': 'CAD',
+  'India': '₹',
+  'USA': '$',
+  'United Kingdom': '£',
+  'France': '€',
+  'Germany': '€',
+  'Japan': '¥',
+  'Australia': 'A$',
+  'Canada': 'C$',
   'United Arab Emirates': 'AED',
-  'Singapore': 'SGD',
-  // Add more as needed
+  'Singapore': 'S$',
 };
 
 export const getCurrencySymbol = (country) => {

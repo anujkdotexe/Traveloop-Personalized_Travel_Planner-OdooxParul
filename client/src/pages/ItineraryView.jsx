@@ -5,7 +5,15 @@ import { useAuth } from '../context/AuthContext';
 import { useToast, ToastContainer } from '../components/Toast';
 import { formatCurrency } from '../utils/currency';
 
-/* ... icons ... */
+/* ── Icons ─────────────────────────────────────────────────────────────────── */
+const ChevronLeftIcon = () => <svg className="icon" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>;
+const ShareIcon       = () => <svg className="icon" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>;
+const PinIcon         = () => <svg className="icon icon-sm" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>;
+const ClockIcon       = () => <svg className="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+const DollarIcon      = () => <svg className="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
+
+const CATEGORY_COLORS = { Hotel: 'var(--primary)', Travel: 'var(--secondary)', Food: '#f59e0b', Activity: '#8b5cf6' };
+
 
 export default function ItineraryView() {
   const { id } = useParams();

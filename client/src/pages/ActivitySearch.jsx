@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useToast, ToastContainer } from '../components/Toast';
+import { useAuth } from '../context/AuthContext';
 import CurrencyBadge from '../components/CurrencyBadge';
 
 
@@ -57,6 +58,8 @@ export default function ActivitySearch() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get('tripId');
+  const stopId = searchParams.get('stopId');
+  const { token } = useAuth();
   const { toasts, showToast, dismissToast } = useToast();
 
   const matchesCost = (act) => {
@@ -88,10 +91,30 @@ export default function ActivitySearch() {
   if (sortBy === 'duration')  activities = [...activities].sort((a, b) => parseFloat(a.duration) - parseFloat(b.duration));
   if (sortBy === 'name')      activities = [...activities].sort((a, b) => a.name.localeCompare(b.name));
 
-  const handleAdd = (act) => {
-    setAdded(prev => ({ ...prev, [act.id]: true }));
-    showToast(`"${act.name}" added to your itinerary!`, 'success');
-    if (tripId) setTimeout(() => navigate(`/itinerary/${tripId}`), 1200);
+  const handleAdd = async (act) => {
+    if (!stopId || !token) {
+      showToast('Please select a city in your itinerary to add activities.', 'info');
+      return;
+    }
+    try {
+      const res = await fetch('/api/trips/activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          stop_id: stopId,
+          activity_name: act.name,
+          cost_estimate: act.cost,
+          category: act.category,
+          scheduled_time: '10:00:00'
+        })
+      });
+      if (!res.ok) throw new Error('Failed to add activity');
+      setAdded(prev => ({ ...prev, [act.id]: true }));
+      showToast(`"${act.name}" added to your itinerary!`, 'success');
+      if (tripId) setTimeout(() => navigate(`/itinerary/${tripId}`), 1200);
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   };
 
   const CATEGORY_COLORS = { sightseeing: 'var(--primary)', culture: '#8b5cf6', dining: 'var(--secondary)', food: '#f59e0b', adventure: 'var(--accent)' };

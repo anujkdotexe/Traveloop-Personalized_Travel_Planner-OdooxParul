@@ -182,7 +182,7 @@ export default function Dashboard() {
             <div className="card text-center" style={{ padding: 'var(--space-xl)' }}>
               <h4 style={{ marginBottom: 8 }}>No trips yet</h4>
               <p>Start planning your first adventure.</p>
-              <Link to="/create-trip" className="btn btn-primary" style={{ marginTop: '1.25rem', display: 'inline-flex' }}><PlusIcon /> Create First Trip</Link>
+              <button onClick={() => setShowCreate(true)} className="btn btn-primary" style={{ marginTop: '1.25rem', display: 'inline-flex' }}><PlusIcon /> Create First Trip</button>
             </div>
           )}
         </section>

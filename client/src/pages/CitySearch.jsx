@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useToast, ToastContainer } from '../components/Toast';
+import { useAuth } from '../context/AuthContext';
 
 const SearchIcon = () => <svg className="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
 const ChevronLeftIcon = () => <svg className="icon" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>;
@@ -49,6 +50,7 @@ export default function CitySearch() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get('tripId');
+  const { token } = useAuth();
   const { toasts, showToast, dismissToast } = useToast();
 
   let cities = CITIES
@@ -61,10 +63,31 @@ export default function CitySearch() {
   if (sortBy === 'cost-asc')   cities = [...cities].sort((a, b) => a.cost_index.length - b.cost_index.length);
   if (sortBy === 'cost-desc')  cities = [...cities].sort((a, b) => b.cost_index.length - a.cost_index.length);
 
-  const handleAdd = (city) => {
-    setAdded(prev => ({ ...prev, [city.id]: true }));
-    showToast(`${city.name} added to your trip!`, 'success');
-    if (tripId) setTimeout(() => navigate(`/itinerary/${tripId}`), 1200);
+  const handleAdd = async (city) => {
+    if (!tripId || !token) {
+      showToast('Please start planning a trip first.', 'info');
+      return;
+    }
+    try {
+      const res = await fetch('/api/trips/stop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          trip_id: tripId,
+          city_name: city.name,
+          country: city.country,
+          arrival_date: new Date().toISOString().split('T')[0], // Fallback
+          departure_date: new Date().toISOString().split('T')[0],
+          sequence_order: 1
+        })
+      });
+      if (!res.ok) throw new Error('Failed to add city');
+      setAdded(prev => ({ ...prev, [city.id]: true }));
+      showToast(`${city.name} added to your trip!`, 'success');
+      setTimeout(() => navigate(`/itinerary/${tripId}`), 1200);
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   };
 
   return (

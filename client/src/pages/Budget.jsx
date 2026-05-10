@@ -6,7 +6,15 @@ import { useAuth } from '../context/AuthContext';
 import { useToast, ToastContainer } from '../components/Toast';
 import { formatCurrency, getCurrencySymbol } from '../utils/currency';
 
-/* ... icons ... */
+/* ── Icons ─────────────────────────────────────────────────────────────────── */
+const ChevronLeftIcon = () => <svg className="icon" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>;
+const DownloadIcon    = () => <svg className="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
+const WalletIcon      = () => <svg className="icon" viewBox="0 0 24 24"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"/></svg>;
+const AlertIcon       = () => <svg className="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
+const TrendIcon       = () => <svg className="icon" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>;
+
+const COLORS = ['#6366f1','#14b8a6','#f43f5e','#f59e0b','#8b5cf6','#10b981'];
+
 
 export default function Budget() {
   const { id: tripId } = useParams();

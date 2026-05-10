@@ -1,5 +1,11 @@
-# Traveloop — Personalized Travel Planner
+# Traveloop - Personalized Travel Planner
 
+Traveloop is a comprehensive travel planning platform that helps you discover, plan, and share your perfect trips.
+
+## 📖 Documentation
+Detailed system architecture, database schema, and API documentation can be found in [DOCS.md](./DOCS.md).
+
+## 🚀 Getting Started
 Traveloop is a full-stack travel planning platform for building multi-stop itineraries, tracking budgets, and sharing trips.
 
 ## 🚀 Features

@@ -22,6 +22,8 @@ import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import SharedView from './pages/SharedView';
 import ExpenseInvoice from './pages/ExpenseInvoice';
+import Support from './pages/Support';
+import SavedDestinations from './pages/SavedDestinations';
 
 export default function App() {
   return (
@@ -49,6 +51,8 @@ export default function App() {
           <Route path="/community"             element={<ProtectedRoute><Community /></ProtectedRoute>} />
           <Route path="/profile"              element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/invoice/:id"          element={<ProtectedRoute><ExpenseInvoice /></ProtectedRoute>} />
+          <Route path="/support"              element={<ProtectedRoute><Support /></ProtectedRoute>} />
+          <Route path="/saved-destinations"   element={<ProtectedRoute><SavedDestinations /></ProtectedRoute>} />
 
           {/* ── Admin only ──────────────────────────── */}
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />

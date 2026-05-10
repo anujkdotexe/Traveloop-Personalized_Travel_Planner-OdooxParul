@@ -13,6 +13,9 @@ const { verifyAdmin } = require('../middleware/auth');
 
 router.get('/stats',              verifyAdmin, ac.getAnalytics);
 router.get('/users',              verifyAdmin, ac.getUsers);
+router.get('/users/:userId/trips', verifyAdmin, ac.getUserTrips);
+router.patch('/users/:id/status',  verifyAdmin, ac.toggleUserStatus);
+router.patch('/users/:id/role',    verifyAdmin, ac.updateUserRole);
 router.delete('/users/:userId',   verifyAdmin, ac.deleteUser);
 
 module.exports = router;

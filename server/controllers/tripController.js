@@ -41,12 +41,16 @@ exports.getTripById = async (req, res) => {
       [id]
     );
 
+    const stops = stopsResult.rows.map(stop => ({
+      ...stop,
+      activities: activitiesResult.rows.filter(a => a.stop_id === stop.id)
+    }));
+
     res.json({
       status: 'success',
       data: {
         trip: tripResult.rows[0],
-        stops: stopsResult.rows,
-        activities: activitiesResult.rows,
+        stops: stops,
       },
     });
   } catch (err) {
@@ -350,16 +354,70 @@ exports.getTopDestinations = async (req, res) => {
       LIMIT 4
     `);
     
-    // Enrich with Unsplash images
-    const destinations = result.rows.map(d => ({
+    let destinations = result.rows.map(d => ({
       name: d.name + ', ' + d.country,
       img: `https://loremflickr.com/400/300/city,${encodeURIComponent(d.name)}`,
       desc: `${d.count} trips planned here`
     }));
 
+    if (destinations.length === 0) {
+      destinations = [
+        { name: 'Tokyo, Japan', img: 'https://images.unsplash.com/photo-1540959733332-e94e270b4d8a?auto=format&fit=crop&w=400&q=80', desc: 'Modern tradition at its best.' },
+        { name: 'Paris, France', img: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=400&q=80', desc: 'The city of lights and love.' },
+        { name: 'Rome, Italy', img: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=400&q=80', desc: 'Explore the eternal city.' },
+        { name: 'New York, USA', img: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=400&q=80', desc: 'The city that never sleeps.' }
+      ];
+    }
+
     res.json({ status: 'success', data: destinations });
   } catch (err) {
     res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// ─── Copy a public trip to user's account ───────────────────────────────────
+exports.copyTrip = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // 1. Get original trip
+    const original = await db.query('SELECT * FROM trips WHERE id = $1 AND is_public = TRUE', [id]);
+    if (original.rows.length === 0) return res.status(404).json({ message: 'Public trip not found.' });
+    
+    const trip = original.rows[0];
+    
+    // 2. Create new trip for current user
+    const newTrip = await db.query(
+      `INSERT INTO trips (user_id, title, start_date, end_date, description, is_public, status)
+       VALUES ($1, $2, $3, $4, $5, FALSE, 'Planned')
+       RETURNING *`,
+      [req.user.id, `Copy of ${trip.title}`, trip.start_date, trip.end_date, trip.description]
+    );
+    const newTripId = newTrip.rows[0].id;
+
+    // 3. Copy stops
+    const stops = await db.query('SELECT * FROM stops WHERE trip_id = $1', [id]);
+    for (const stop of stops.rows) {
+      const newStop = await db.query(
+        `INSERT INTO stops (trip_id, city_name, country, arrival_date, departure_date, sequence_order)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+        [newTripId, stop.city_name, stop.country, stop.arrival_date, stop.departure_date, stop.sequence_order]
+      );
+      const newStopId = newStop.rows[0].id;
+
+      // 4. Copy activities for each stop
+      const activities = await db.query('SELECT * FROM activities WHERE stop_id = $1', [stop.id]);
+      for (const act of activities.rows) {
+        await db.query(
+          `INSERT INTO activities (stop_id, activity_name, category, cost_estimate, scheduled_time)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [newStopId, act.activity_name, act.category, act.cost_estimate, act.scheduled_time]
+        );
+      }
+    }
+
+    res.json({ status: 'success', data: newTrip.rows[0], message: 'Trip copied successfully!' });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: 'Failed to copy trip.' });
   }
 };
 

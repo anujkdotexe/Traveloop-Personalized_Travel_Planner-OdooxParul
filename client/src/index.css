@@ -219,6 +219,30 @@ button,input,textarea,select{font-family:inherit}
 .invoice-table tr:last-child td{border-bottom:none}
 .invoice-table tr:hover td{background:var(--bg-surface-alt)}
 
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+.modal-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  width: 100%;
+  box-shadow: var(--shadow-xl);
+  animation: dropdownIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
 /* Print styles */
 @media print {
   .no-print, .navbar, .toolbar, .btn, aside, footer { display: none !important; }

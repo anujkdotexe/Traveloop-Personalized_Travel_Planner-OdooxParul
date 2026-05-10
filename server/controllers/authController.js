@@ -13,7 +13,7 @@ const jwt = require('jsonwebtoken');
  * @returns {JSON} 201 on success with user data (id, name, email) or 500 on error
  */
 exports.register = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, phone, city, country } = req.body;
   if (!name || !email || !password)
     return res.status(400).json({ message: 'Name, email, and password are required.' });
   if (password.length < 8)
@@ -29,10 +29,18 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const result = await db.query(
-      `INSERT INTO users (name, email, password_hash, role, profile_image_url)
-       VALUES ($1, $2, $3, 'user', $4)
-       RETURNING id, name, email, role`,
-      [name, email, hashedPassword, 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(name)]
+      `INSERT INTO users (name, email, password_hash, role, profile_image_url, phone, city, country)
+       VALUES ($1, $2, $3, 'user', $4, $5, $6, $7)
+       RETURNING id, name, email, role, phone, city, country`,
+      [
+        name, 
+        email, 
+        hashedPassword, 
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(name),
+        phone || null,
+        city || null,
+        country || null
+      ]
     );
     const newUser = result.rows[0];
 

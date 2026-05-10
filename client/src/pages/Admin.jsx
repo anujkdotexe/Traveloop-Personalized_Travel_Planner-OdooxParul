@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Navbar from '../components/Navbar';
+import Modal from '../components/Modal';
 import Chart from 'chart.js/auto';
 import { useAuth } from '../context/AuthContext';
 
@@ -28,6 +29,9 @@ export default function Admin() {
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userTrips, setUserTrips] = useState([]);
+  const [loadingTrips, setLoadingTrips] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -105,13 +109,58 @@ export default function Admin() {
   const deleteUser = async (id) => {
     if (!window.confirm('Are you sure you want to remove this user?')) return;
     try {
-      await fetch(`/api/admin/users/${id}`, {
+      const res = await fetch(`/api/admin/users/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      fetchData();
+      const data = await res.json();
+      if (res.ok) {
+        setUsers(users.filter(u => u.id !== id));
+      }
     } catch (err) {
       console.error('Failed to delete user:', err);
+    }
+  };
+
+  const toggleStatus = async (id) => {
+    try {
+      const res = await fetch(`/api/admin/users/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setUsers(users.map(u => u.id === id ? { ...u, is_active: !u.is_active } : u));
+      }
+    } catch (err) { console.error('Update failed.', err); }
+  };
+
+  const toggleRole = async (id, current) => {
+    const next = current === 'admin' ? 'user' : 'admin';
+    try {
+      const res = await fetch(`/api/admin/users/${id}/role`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ role: next })
+      });
+      if (res.ok) {
+        setUsers(users.map(u => u.id === id ? { ...u, role: next } : u));
+      }
+    } catch (err) { console.error('Update failed.', err); }
+  };
+
+  const fetchUserTrips = async (user) => {
+    setSelectedUser(user);
+    setLoadingTrips(true);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/trips`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.status === 'success') setUserTrips(data.data);
+    } catch (err) {
+      console.error('Failed to fetch user trips:', err);
+    } finally {
+      setLoadingTrips(false);
     }
   };
 
@@ -127,10 +176,10 @@ export default function Admin() {
         </div>
 
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '1.5rem', marginBottom: 'var(--space-xl)' }}>
-          <KPI label="Total Users" value={stats?.total_users.toLocaleString()} delta="+12% this month" icon={UsersIcon} color="var(--primary)" />
-          <KPI label="Active Trips" value={stats?.total_trips.toLocaleString()} delta="+8% this month" icon={MapIcon} color="var(--secondary)" />
-          <KPI label="Shared Itineraries" value={stats?.public_trips.toLocaleString()} delta="Community active" icon={TrendIcon} color="var(--accent)" />
-          <KPI label="Activities Logged" value={stats?.total_activities.toLocaleString()} delta="+4% total" icon={ActivityIcon} color="var(--warning)" />
+          <KPI label="Total Users" value={stats?.total_users.toLocaleString()} delta={`${stats?.user_change >= 0 ? '+' : ''}${stats?.user_change}% vs last month`} icon={UsersIcon} color="var(--primary)" />
+          <KPI label="Active Trips" value={stats?.total_trips.toLocaleString()} delta={`${stats?.trip_change >= 0 ? '+' : ''}${stats?.trip_change}% vs last month`} icon={MapIcon} color="var(--secondary)" />
+          <KPI label="Public Itineraries" value={stats?.public_trips.toLocaleString()} icon={GlobeIcon} color="var(--accent)" />
+          <KPI label="Planned Activities" value={stats?.total_activities.toLocaleString()} icon={ChartIcon} color="var(--success)" />
         </div>
 
         <div className="grid" style={{ gridTemplateColumns: '1.5fr 1fr', gap: 'var(--space-lg)', marginBottom: 'var(--space-xl)' }}>
@@ -166,13 +215,21 @@ export default function Admin() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead style={{ background: 'var(--bg-surface-alt)' }}>
-                  <tr>{['Name','Email','Trips','Joined','Action'].map(h => <th key={h} style={{ padding: '0.9rem 1.25rem', textAlign: 'left', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>{h}</th>)}</tr>
+                  <tr>{['Name','Email','Role','Status','Trips','Joined','Action'].map(h => <th key={h} style={{ padding: '0.9rem 1.25rem', textAlign: 'left', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>{h}</th>)}</tr>
                 </thead>
                 <tbody>
                   {users.map(u => (
                     <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                      <td style={{ padding: '0.9rem 1.25rem', fontWeight: 600, fontSize: '0.88rem' }}>{u.name}</td>
+                      <td style={{ padding: '0.9rem 1.25rem', fontWeight: 600, fontSize: '0.88rem' }}>
+                        <span onClick={() => fetchUserTrips(u)} style={{ color: 'var(--primary)', cursor: 'pointer', textDecoration: 'underline' }}>{u.name}</span>
+                      </td>
                       <td style={{ padding: '0.9rem 1.25rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>{u.email}</td>
+                      <td style={{ padding: '0.9rem 1.25rem' }}>
+                        <span onClick={() => toggleRole(u.id, u.role)} style={{ cursor: 'pointer', padding: '3px 10px', borderRadius: 'var(--radius-full)', background: u.role === 'admin' ? 'var(--primary-light)' : 'var(--bg-surface-alt)', color: u.role === 'admin' ? 'var(--primary)' : 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase' }}>{u.role}</span>
+                      </td>
+                      <td style={{ padding: '0.9rem 1.25rem' }}>
+                        <span onClick={() => toggleStatus(u.id)} style={{ cursor: 'pointer', padding: '3px 10px', borderRadius: 'var(--radius-full)', background: u.is_active ? 'var(--secondary-light)' : 'var(--accent-light)', color: u.is_active ? 'var(--secondary)' : 'var(--accent)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase' }}>{u.is_active ? 'Active' : 'Banned'}</span>
+                      </td>
                       <td style={{ padding: '0.9rem 1.25rem', fontWeight: 700 }}>{u.trip_count}</td>
                       <td style={{ padding: '0.9rem 1.25rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>{new Date(u.created_at).toLocaleDateString()}</td>
                       <td style={{ padding: '0.9rem 1.25rem' }}>
@@ -186,6 +243,31 @@ export default function Admin() {
           </div>
         </div>
       </div>
+
+      <Modal isOpen={!!selectedUser} onClose={() => setSelectedUser(null)} title={`${selectedUser?.name}'s Trips`} maxWidth="700px">
+        {loadingTrips ? (
+          <div style={{ padding: '2rem', textAlign: 'center' }}>Loading trips...</div>
+        ) : (
+          <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead style={{ background: 'var(--bg-surface-alt)' }}>
+                <tr>{['Title', 'Dates', 'Stops', 'Status'].map(h => <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {userTrips.map(t => (
+                  <tr key={t.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', fontWeight: 600 }}>{t.title}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{new Date(t.start_date).toLocaleDateString()} - {new Date(t.end_date).toLocaleDateString()}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>{t.stop_count}</td>
+                    <td style={{ padding: '0.75rem 1rem' }}><span className="badge badge-ongoing" style={{ fontSize: '0.65rem' }}>{t.status}</span></td>
+                  </tr>
+                ))}
+                {userTrips.length === 0 && <tr><td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No trips found for this user.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Modal>
     </>
   );
 }
