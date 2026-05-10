@@ -1,270 +1,81 @@
-# Traveloop — System Architecture
+# Traveloop System Architecture
 
-## Overview
+This document describes the high-level architecture, technology stack, and design patterns used in the Traveloop platform.
 
-Traveloop is a **monorepo** split into two independently-runnable packages — a React SPA and an Express REST API — connected in development via a Vite reverse proxy.
+## System Architecture Diagram
 
----
-
-## Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────┐
-│                   BROWSER                       │
-│                                                 │
-│  React SPA (Vite, port 5173)                    │
-│  ┌─────────────────────────────────────────┐    │
-│  │  AuthContext  → JWT stored in memory    │    │
-│  │  React Router v6 (18 protected routes)  │    │
-│  │                                         │    │
-│  │  15 SCREENS:                            │    │
-│  │  Home · Login · Signup · Dashboard      │    │
-│  │  CreateTrip · ItineraryBuilder          │    │
-│  │  ItineraryView · CitySearch             │    │
-│  │  ActivitySearch · Budget · Invoice      │    │
-│  │  Checklist · Notes · Community          │    │
-│  │  Profile · Admin · SharedView           │    │
-│  └─────────────────────────────────────────┘    │
-│           │ fetch /api/* (proxied)              │
-└───────────┼─────────────────────────────────────┘
-            │
-┌───────────▼─────────────────────────────────────┐
-│         Express API Server (port 5000)          │
-│                                                 │
-│  ┌──────────────────────────────────────────┐   │
-│  │  Middleware stack                        │   │
-│  │  cors · express.json · verifyUser        │   │
-│  │  verifyAdmin (admin-only routes)         │   │
-│  └──────────────────────────────────────────┘   │
-│                                                 │
-│  Routes:                                        │
-│  POST /auth/register  POST /auth/login          │
-│  GET|POST|PUT|DELETE /trips/:id                 │
-│  GET|POST|PUT|DELETE /trips/:id/stops           │
-│  GET|POST|PUT|DELETE /stops/:id/activities      │
-│  GET /trips/:id/budget                          │
-│  GET|POST|PATCH|DELETE /trips/:id/expenses      │
-│  GET|POST|PATCH|DELETE /trips/:id/checklist     │
-│  GET|POST|PUT|DELETE /trips/:id/notes           │
-│  GET /community                                 │
-│  GET /admin/stats  GET|DELETE /admin/users      │
-│                                                 │
-│  Controllers → DB queries (pg pool)             │
-└───────────┬─────────────────────────────────────┘
-            │
-┌───────────▼─────────────────────────────────────┐
-│           PostgreSQL Database                   │
-│                                                 │
-│  users ─── trips ─── stops ─── activities      │
-│                   └── expenses                 │
-│                   └── checklists               │
-│                   └── notes (stop_id optional)  │
-│                                                 │
-│  All FK: ON DELETE CASCADE                      │
-└─────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    User((User))
+    
+    subgraph "Frontend Layer (Vercel)"
+        UI[React 18 SPA]
+        V_Rewrites[Vercel Rewrites / Proxy]
+    end
+    
+    subgraph "Backend Layer (Render)"
+        API[Express.js API Server]
+        Auth[JWT/Bcrypt Auth]
+        Notify[Notification Service]
+        Admin[Admin Analytics Service]
+    end
+    
+    subgraph "Data Layer (Render Managed)"
+        DB[(PostgreSQL Database)]
+    end
+    
+    User <-->|HTTPS| UI
+    UI <-->|/api Proxy| V_Rewrites
+    V_Rewrites <-->|Internal HTTP| API
+    API <--> Auth
+    API <--> Notify
+    API <--> Admin
+    API <-->|SQL Queries| DB
 ```
 
----
+## Technology Stack
 
-## Frontend Architecture
+### Frontend (Client)
+- **Framework**: React 18 (Vite-powered)
+- **State Management**: React Context API (`AuthContext`, `CurrencyContext`)
+- **Routing**: React Router v6 (SPA)
+- **Styling**: Vanilla CSS with the "Premium Voyage" design system
+- **Charts**: Chart.js for Admin and Budget analytics
 
-### State Management
+### Backend (Server)
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: PostgreSQL (Relational)
+- **Authentication**: JWT (JSON Web Tokens) with `bcryptjs` (Cost factor 12)
+- **Environment**: Dotenv for secure configuration
 
-| Concern | Solution |
-|---------|---------|
-| Auth session | `AuthContext` — React Context with `user`, `token`, `isAdmin`, `login()`, `logout()` |
-| Token persistence | `localStorage` key `traveloop_token` |
-| UI state | Local `useState` per page |
-| Server state | Direct `fetch` calls with `token` from context |
-| Notifications | Custom `useToast` hook (`Toast.jsx`) |
+## Design Patterns
 
-### Routing
+### 1. Middleware Chain (Backend)
+The backend uses a chain of responsibility pattern for authentication and authorization:
+- `verifyToken`: Decodes JWT and attaches the user payload to `req.user`.
+- `verifyAdmin`: Checks the `role` field in the payload to restrict access to management routes.
 
-All routes are declared in `App.jsx`. Three wrapper components protect routes:
-- `<ProtectedRoute>` — redirects to `/login` if no token
-- `<AdminRoute>` — redirects to `/dashboard` if not admin role
-- `<GuestRoute>` — redirects to `/dashboard` if already logged in
+### 2. Single Source of Truth (Database)
+The platform follows a strict relational model. Analytics (e.g., top destinations, user growth) are calculated using live SQL aggregations rather than redundant fields, ensuring data consistency.
 
-### Component Hierarchy
+### 3. SPA Pattern (Frontend)
+The application is a Single Page Application. To support direct links and page refreshes on hosting providers like Vercel/Netlify, a rewrite rule is implemented:
+- `vercel.json` redirects all non-file requests to `index.html`.
 
-```
-App.jsx
-├── Navbar (sticky, avatar dropdown, notification bell)
-├── AuthContext.Provider
-│   ├── /                → Home.jsx
-│   ├── /login           → Login.jsx
-│   ├── /signup          → Signup.jsx
-│   ├── /forgot-password → ForgotPassword.jsx
-│   ├── /shared/:id      → SharedView.jsx (no auth)
-│   └── [Protected]
-│       ├── /dashboard        → Dashboard.jsx
-│       ├── /trips            → MyTrips.jsx
-│       ├── /create-trip      → CreateTrip.jsx
-│       ├── /itinerary/:id    → ItineraryBuilder.jsx
-│       ├── /itinerary-view/:id → ItineraryView.jsx
-│       ├── /city-search      → CitySearch.jsx
-│       ├── /activity-search  → ActivitySearch.jsx
-│       ├── /budget/:id       → Budget.jsx
-│       ├── /invoice/:id      → ExpenseInvoice.jsx
-│       ├── /checklist/:id    → Checklist.jsx
-│       ├── /notes/:id        → Notes.jsx
-│       ├── /community        → Community.jsx
-│       ├── /profile          → Profile.jsx
-│       └── [Admin only]
-│           └── /admin        → Admin.jsx
-```
+## Deployment Flow
 
----
+### Local Development
+1. `npm run dev` in `server` (Port 5000)
+2. `npm run dev` in `client` (Port 5173 - Proxied to 5000)
 
-## Backend Architecture
+### Production
+- **Database**: Render PostgreSQL (Managed)
+- **Backend**: Render Web Service (linked to `main` branch)
+- **Frontend**: Vercel (rewrites `/api` to the Render backend)
 
-### Auth Flow
-
-```
-POST /auth/login
-  → Find user by email in DB
-  → bcrypt.compare(password, hash)  [cost 12]
-  → Sign JWT {id, role} expires 7d
-  → Return token + user object
-
-Subsequent requests:
-  → Authorization: Bearer <token>
-  → middleware/auth.js: jwt.verify(token, JWT_SECRET)
-  → Attach req.user = {id, role}
-  → verifyAdmin: check req.user.role === 'admin'
-```
-
-### Database Schema
-
-```sql
--- Core
-CREATE TABLE users (
-  id            SERIAL PRIMARY KEY,
-  name          TEXT NOT NULL,
-  email         TEXT UNIQUE NOT NULL,
-  password_hash TEXT NOT NULL,
-  role          TEXT CHECK (role IN ('user','admin')) DEFAULT 'user',
-  language_pref TEXT DEFAULT 'English',
-  created_at    TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE trips (
-  id          SERIAL PRIMARY KEY,
-  user_id     INT REFERENCES users(id) ON DELETE CASCADE,
-  title       TEXT NOT NULL,
-  start_date  DATE,
-  end_date    DATE,
-  description TEXT,
-  cover_url   TEXT,
-  is_public   BOOLEAN DEFAULT false,
-  created_at  TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE stops (
-  id             SERIAL PRIMARY KEY,
-  trip_id        INT REFERENCES trips(id) ON DELETE CASCADE,
-  city           TEXT NOT NULL,
-  country        TEXT,
-  arrival_date   DATE,
-  departure_date DATE,
-  position       INT DEFAULT 0
-);
-
-CREATE TABLE activities (
-  id           SERIAL PRIMARY KEY,
-  stop_id      INT REFERENCES stops(id) ON DELETE CASCADE,
-  name         TEXT NOT NULL,
-  category     TEXT,
-  scheduled_at TEXT,
-  duration_min INT DEFAULT 0,
-  cost         NUMERIC DEFAULT 0,
-  notes        TEXT
-);
-
-CREATE TABLE expenses (
-  id          SERIAL PRIMARY KEY,
-  trip_id     INT REFERENCES trips(id) ON DELETE CASCADE,
-  category    TEXT,
-  description TEXT,
-  amount      NUMERIC NOT NULL,
-  currency    TEXT DEFAULT 'USD',
-  paid_at     TIMESTAMPTZ
-);
-
-CREATE TABLE checklists (
-  id        SERIAL PRIMARY KEY,
-  trip_id   INT REFERENCES trips(id) ON DELETE CASCADE,
-  item_name TEXT NOT NULL,
-  category  TEXT DEFAULT 'General',
-  is_packed BOOLEAN DEFAULT false
-);
-
-CREATE TABLE notes (
-  id         SERIAL PRIMARY KEY,
-  trip_id    INT REFERENCES trips(id) ON DELETE CASCADE,
-  stop_id    INT REFERENCES stops(id) ON DELETE SET NULL,
-  title      TEXT NOT NULL,
-  content    TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
----
-
-## Design System
-
-Defined in `client/src/index.css` as CSS custom properties:
-
-```css
---primary:       #6366f1  (Indigo)
---secondary:     #14b8a6  (Teal)
---accent:        #f43f5e  (Rose)
---success:       #10b981
---warning:       #f59e0b
---radius-lg:     24px
---radius-md:     14px
---radius-full:   9999px
-```
-
-**Typography:** Outfit (Google Fonts) — weights 300, 400, 500, 600, 700
-
-**Icons:** All SVG inline — zero emoji policy enforced project-wide.
-
-**Animations:**
-- `@keyframes dropdownIn` — navbar/notification panel slide-in
-- `@keyframes spin` — loading spinner
-- `.card-hover:hover` — `translateY(-3px)` + shadow elevation
-- `.btn-primary:hover` — `translateY(-1px)` + glow shadow
-
----
-
-## Data Flow: Creating a Trip
-
-```
-User fills CreateTrip form
-  → POST /api/trips { title, start_date, end_date, description }
-  → Server validates input
-  → INSERT INTO trips (user_id, ...) RETURNING *
-  → Response: trip object with new id
-  → Navigate to /itinerary/:id
-
-User adds a stop
-  → POST /api/trips/:id/stops { city, country, arrival_date, departure_date }
-  → INSERT INTO stops → Response
-  → Add activity to stop
-  → POST /api/stops/:stopId/activities { name, category, cost }
-  → Budget auto-calculated: SELECT SUM(cost) FROM activities...
-```
-
----
-
-## Security Considerations
-
-| Vector | Mitigation |
-|--------|-----------|
-| Password storage | bcrypt cost 12 |
-| Token theft | JWT expires in 7 days; no refresh token stored in DB |
-| CSRF | SPA with `Authorization` header (not cookies) |
-| Role escalation | `role` stored in DB; re-checked on every admin request |
-| SQL injection | Parameterized queries via `pg` pool |
-| Sensitive env vars | `.env` git-ignored; `.env.example` provided |
+## Security Model
+- All passwords are encrypted with **Bcrypt (cost factor 12)**.
+- JWT tokens expire in **8 hours** and are required for all non-public routes.
+- **CORS** is restricted to the specific frontend origin in production.
+- **SQL Injection** protection via `pg` parameterized queries.

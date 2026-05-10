@@ -3,7 +3,7 @@ const db = require('../db/db');
 // ─── Platform analytics ──────────────────────────────────────────────────────
 exports.getAnalytics = async (req, res) => {
   try {
-    const [users, trips, publicTrips, activities, topCities] = await Promise.all([
+    const [users, trips, publicTrips, activities, topCities, categories, userGrowth] = await Promise.all([
       db.query('SELECT COUNT(*) FROM users'),
       db.query('SELECT COUNT(*) FROM trips'),
       db.query('SELECT COUNT(*) FROM trips WHERE is_public = TRUE'),

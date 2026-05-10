@@ -1,277 +1,86 @@
-# Traveloop REST API Reference
+# Traveloop REST API Documentation
 
-Base URL (development): `http://localhost:5000/api`
+Base URL: `https://traveloop-personalized-travel-planner.onrender.com/api` (Production)
+Local: `http://localhost:5000/api`
 
-All protected endpoints require: `Authorization: Bearer <JWT_TOKEN>`
-
----
-
-## Authentication
-
-### POST `/auth/register`
-Register a new user account.
-
-**Body:**
+## Overview
+All endpoints return JSON responses. Errors follow a standard format:
 ```json
-{ "name": "string", "email": "string", "password": "string (min 8 chars)" }
-```
-
-**Response:** `201`
-```json
-{ "status": "success", "message": "Account created." }
+{ "status": "error", "message": "Reason for failure" }
 ```
 
 ---
 
-### POST `/auth/login`
-Authenticate and receive a JWT token.
+## 1. Authentication
+Endpoints for user lifecycle management.
 
-**Body:**
-```json
-{ "email": "string", "password": "string" }
-```
+### [POST] `/auth/register`
+Create a new user account.
+- **Body**: `{ "name", "email", "password" }`
+- **Response**: `201 Created`
 
-**Response:** `200`
-```json
-{
-  "status": "success",
-  "token": "<JWT>",
-  "user": { "id": 1, "name": "Demo User", "email": "demo@traveloop.com", "role": "user" }
-}
-```
+### [POST] `/auth/login`
+Authenticate and receive a JWT.
+- **Body**: `{ "email", "password" }`
+- **Response**: `200 OK` with `{ "token", "user" }`
 
 ---
 
-## Trips (Protected)
+## 2. Trips & Itineraries
+Core CRUD operations for travel plans.
 
-### GET `/trips`
+### [GET] `/trips`
 List all trips for the authenticated user.
 
-**Response:** `200` — Array of trip objects with `stop_count`.
+### [POST] `/trips`
+Initialize a new trip.
+- **Body**: `{ "title", "start_date", "end_date", "description", "is_public" }`
+
+### [GET] `/trips/:id`
+Fetch complete trip details including stops and activities.
+
+### [PUT] `/trips/:id`
+Modify trip details. Supports partial updates.
+
+### [DELETE] `/trips/:id`
+Permanent removal of a trip and all associated child records.
 
 ---
 
-### POST `/trips`
-Create a new trip.
+## 3. Notifications
+User engagement and alerts.
 
-**Body:**
-```json
-{ "title": "string", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD", "description": "string", "is_public": false }
-```
+### [GET] `/notifications`
+Retrieve recent alerts (max 20) for the user.
 
----
-
-### GET `/trips/:id`
-Get a single trip with all stops and activities.
+### [PATCH] `/notifications/read-all`
+Mark all unread alerts as read.
 
 ---
 
-### PUT `/trips/:id`
-Update a trip (owner only).
+## 4. Admin Analytics (Admin Only)
+High-level platform monitoring.
 
-**Body:** Any subset of trip fields.
+### [GET] `/admin/stats`
+Returns aggregated data for:
+- Total users, trips, and activities.
+- User registration growth (6-month trend).
+- Activity category distribution.
+- Top destinations leaderboard.
 
----
+### [GET] `/admin/users`
+List all users with their trip counts and registration dates.
 
-### DELETE `/trips/:id`
-Delete a trip and all associated data (owner only). Cascades to stops, activities, expenses, checklists, notes.
-
----
-
-## Stops
-
-### POST `/trips/:id/stops`
-Add a city stop to a trip.
-
-**Body:**
-```json
-{ "city": "Paris", "country": "France", "arrival_date": "2024-06-12", "departure_date": "2024-06-18" }
-```
+### [DELETE] `/admin/users/:userId`
+Administrative removal of a user account.
 
 ---
 
-### PUT `/stops/:stopId`
-Update a stop's dates or position.
+## 5. Community & Public
+Public-facing discovery endpoints.
 
----
+### [GET] `/trips/public/community`
+Searchable feed of itineraries marked as `is_public = true`.
 
-### DELETE `/stops/:stopId`
-Remove a stop (and its activities) from a trip.
-
----
-
-## Activities
-
-### POST `/stops/:stopId/activities`
-Add an activity to a stop.
-
-**Body:**
-```json
-{ "name": "Eiffel Tower", "category": "sightseeing", "scheduled_at": "09:00", "duration_min": 120, "cost": 45 }
-```
-
----
-
-### PUT `/activities/:actId`
-Update an activity.
-
----
-
-### DELETE `/activities/:actId`
-Delete an activity.
-
----
-
-## Budget & Expenses
-
-### GET `/trips/:id/budget`
-Get budget summary with total estimated cost and per-category breakdown.
-
-**Response:**
-```json
-{
-  "status": "success",
-  "data": {
-    "total": 2470,
-    "budget": 3000,
-    "remaining": 530,
-    "by_category": { "Hotel": 1200, "Travel": 100, "Dining": 840, "Sightseeing": 180, "Transport": 150 },
-    "daily_average": 176,
-    "days": 14
-  }
-}
-```
-
----
-
-### POST `/trips/:id/expenses`
-Log a manual expense entry.
-
-**Body:**
-```json
-{ "category": "Hotel", "description": "Hotel Ritz - 6 nights", "amount": 1200, "currency": "USD" }
-```
-
----
-
-## Checklist
-
-### GET `/trips/:id/checklist`
-Get all checklist items for a trip, grouped by category.
-
----
-
-### POST `/trips/:id/checklist`
-Add an item to the checklist.
-
-**Body:**
-```json
-{ "item_name": "Passport", "category": "Documents" }
-```
-
----
-
-### PATCH `/checklist/:itemId`
-Toggle `is_packed` status.
-
----
-
-### DELETE `/checklist/:itemId`
-Remove an item.
-
----
-
-## Notes / Journal
-
-### GET `/trips/:id/notes`
-Get all notes for a trip.
-
----
-
-### POST `/trips/:id/notes`
-Create a new note.
-
-**Body:**
-```json
-{ "title": "Hotel Check-in Details", "content": "string", "stop_id": 2 }
-```
-
----
-
-### PUT `/notes/:noteId`
-Update a note's title or content.
-
----
-
-### DELETE `/notes/:noteId`
-Delete a note.
-
----
-
----
-
-## Notifications (Protected)
-
-### GET `/notifications`
-Get all notifications for the authenticated user.
-
-### PATCH `/notifications/read-all`
-Mark all notifications as read for the authenticated user.
-
----
-
-## Community & Destinations (Public)
-
-### GET `/trips/public/community`
-Get all trips with `is_public = true`. Supports `?search=` and `?sort=popular|recent`.
-
-### GET `/trips/public/top-destinations`
-Get top 4 popular cities across all user trips for dashboard highlights.
-
----
-
-## Admin (Admin role only)
-
-### GET `/admin/stats`
-Platform-wide analytics.
-
-**Response:**
-```json
-{
-  "total_users": 12840,
-  "active_trips": 4215,
-  "shared_itineraries": 1052,
-  "activities_logged": 38940,
-  "top_cities": [{ "name": "Paris, France", "count": 842 }, ...],
-  "user_growth": [1200, 1900, 3000, 3500, 4800, 5200]
-}
-```
-
----
-
-### GET `/admin/users`
-List all registered users.
-
----
-
-### DELETE `/admin/users/:userId`
-Remove a user account and all their data.
-
----
-
-## Error Responses
-
-All errors return:
-
-```json
-{ "status": "error", "message": "Human-readable description." }
-```
-
-| Code | Meaning |
-|------|---------|
-| 400 | Validation error (missing/invalid fields) |
-| 401 | Missing or invalid token |
-| 403 | Insufficient role (non-admin accessing admin route) |
-| 404 | Resource not found |
-| 409 | Conflict (e.g. email already in use) |
-| 500 | Internal server error |
+### [GET] `/trips/public/top-destinations`
+Calculates and returns the most visited cities globally.
