@@ -1,14 +1,20 @@
-# Traveloop System Architecture
+# Traveloop Architecture Documentation
 
-Traveloop is a modern, full-stack travel planning platform built with a decoupled architecture for scalability and performance.
+## Overview
+
+Traveloop follows a **three-layer architecture** with clear separation of concerns:
+- **Frontend Layer**: React.js with Vite and vanilla CSS
+- **API Layer**: Express.js REST API with modular controllers
+- **Data Layer**: PostgreSQL relational database with UUID-based entities
 
 ## Technology Stack
+
 - **Frontend**: React.js with Vite
-- **Styling**: Vanilla CSS (Custom Design System)
+- **Styling**: Vanilla CSS (Premium Voyage design system)
 - **State Management**: React Context API
 - **Backend**: Node.js with Express
 - **Database**: PostgreSQL
-- **Deployment**: Vercel (Frontend) + Render (Backend)
+- **Deployment**: Vercel (Frontend) + Render (Backend/DB)
 
 ## Architecture Diagram
 
@@ -33,19 +39,26 @@ graph TD
 ## Core Modules
 
 ### 1. Trip Builder Engine
-A complex state machine that manages the hierarchical relationship between Trips, Stops, and Activities. It ensures chronological consistency and manages cost estimations in real-time.
+A stateful layer that manages the relationship between Trips, Stops, and Activities. It keeps itinerary order consistent and supports real-time cost estimates.
 
 ### 2. Financial Tracking
-Consolidates planned activity costs and actual recorded expenses to provide a comprehensive budget health overview. It features an automated invoice generation system for trip settlement.
+Combines planned activity costs and recorded expenses to provide a budget overview. The flow is designed to support invoice-style summaries.
 
 ### 3. Contextual Data Sync
-Uses React Context to share authentication state and live currency conversion rates across all components, ensuring a consistent user experience without redundant API calls.
+React Context shares authentication state and related app-wide values across the UI without repeated prop drilling.
 
 ### 4. Admin Command Center
-A restricted dashboard for platform oversight, featuring real-time usage analytics, user management, and system-wide notification broadcasting.
+An access-restricted dashboard for platform oversight, including analytics, user management, and system-wide signals.
 
 ## Deployment Strategy
-The application follows a standard CI/CD pipeline:
-1. **Source Control**: GitHub (Branch: `Second`)
-2. **Backend**: Render.com (Connected to Managed PostgreSQL)
-3. **Frontend**: Vercel.com (Handles SPA routing and Static Assets)
+
+1. **Source Control**: GitHub
+2. **Backend**: Render.com connected to PostgreSQL
+3. **Frontend**: Vercel.com for SPA hosting and static assets
+
+## Security Model
+
+- Passwords are hashed with Bcrypt.
+- JWT tokens expire after 8 hours.
+- CORS is handled by the API server.
+- Parameterized queries are used to reduce SQL injection risk.
