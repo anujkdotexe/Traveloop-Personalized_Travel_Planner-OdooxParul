@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Users Table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(100) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE users (
 );
 
 -- Trips Table
-CREATE TABLE trips (
+CREATE TABLE IF NOT EXISTS trips (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE trips (
 );
 
 -- Stops (Itinerary Points)
-CREATE TABLE stops (
+CREATE TABLE IF NOT EXISTS stops (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
     city_name VARCHAR(255) NOT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE stops (
 );
 
 -- Activities
-CREATE TABLE activities (
+CREATE TABLE IF NOT EXISTS activities (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     stop_id UUID REFERENCES stops(id) ON DELETE CASCADE,
     activity_name VARCHAR(255) NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE activities (
 );
 
 -- Financials (Expenses)
-CREATE TABLE expenses (
+CREATE TABLE IF NOT EXISTS expenses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
     category VARCHAR(50) NOT NULL,
@@ -66,7 +66,7 @@ CREATE TABLE expenses (
 );
 
 -- Checklists
-CREATE TABLE checklists (
+CREATE TABLE IF NOT EXISTS checklists (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
     item_name VARCHAR(255) NOT NULL,
@@ -76,7 +76,7 @@ CREATE TABLE checklists (
 );
 
 -- Notes
-CREATE TABLE notes (
+CREATE TABLE IF NOT EXISTS notes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     trip_id UUID REFERENCES trips(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
@@ -84,15 +84,15 @@ CREATE TABLE notes (
 );
 
 -- Indexes
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_trips_user_id ON trips(user_id);
-CREATE INDEX idx_stops_trip_id ON stops(trip_id);
-CREATE INDEX idx_activities_stop_id ON activities(stop_id);
-CREATE INDEX idx_expenses_trip_id ON expenses(trip_id);
-CREATE INDEX idx_checklists_trip_id ON checklists(trip_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_trips_user_id ON trips(user_id);
+CREATE INDEX IF NOT EXISTS idx_stops_trip_id ON stops(trip_id);
+CREATE INDEX IF NOT EXISTS idx_activities_stop_id ON activities(stop_id);
+CREATE INDEX IF NOT EXISTS idx_expenses_trip_id ON expenses(trip_id);
+CREATE INDEX IF NOT EXISTS idx_checklists_trip_id ON checklists(trip_id);
 
 -- Notifications
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,

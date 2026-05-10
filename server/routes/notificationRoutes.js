@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/db');
-const { verifyToken } = require('../middleware/auth');
+const { verifyUser } = require('../middleware/auth');
 
 // Get all notifications for current user
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', verifyUser, async (req, res) => {
   try {
     const result = await db.query(
       'SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 20',
@@ -17,7 +17,7 @@ router.get('/', verifyToken, async (req, res) => {
 });
 
 // Mark all as read
-router.patch('/read-all', verifyToken, async (req, res) => {
+router.patch('/read-all', verifyUser, async (req, res) => {
   try {
     await db.query(
       'UPDATE notifications SET is_read = TRUE WHERE user_id = $1',

@@ -208,12 +208,25 @@ Delete a note.
 
 ---
 
-## Community (Public)
+---
 
-### GET `/community`
+## Notifications (Protected)
+
+### GET `/notifications`
+Get all notifications for the authenticated user.
+
+### PATCH `/notifications/read-all`
+Mark all notifications as read for the authenticated user.
+
+---
+
+## Community & Destinations (Public)
+
+### GET `/trips/public/community`
 Get all trips with `is_public = true`. Supports `?search=` and `?sort=popular|recent`.
 
-**No auth required.**
+### GET `/trips/public/top-destinations`
+Get top 4 popular cities across all user trips for dashboard highlights.
 
 ---
 

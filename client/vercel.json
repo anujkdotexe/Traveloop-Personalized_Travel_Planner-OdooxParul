@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://odooxparul-backend.onrender.com/api/:path*"
+      "destination": "https://traveloop-personalized-travel-planner.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",
