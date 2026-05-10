@@ -1,3 +1,11 @@
+/**
+ * @file server.js
+ * @description Main entry point for the Traveloop API server.
+ * Initializes Express application, configures middleware, and routes all HTTP requests.
+ * @author Traveloop Team
+ * @version 1.0.0
+ */
+
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();

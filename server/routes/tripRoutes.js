@@ -1,3 +1,11 @@
+/**
+ * @file tripRoutes.js
+ * @description Defines protected trip management endpoints for authenticated users.
+ * All endpoints require JWT authentication via verifyUser middleware.
+ * Supports CRUD operations on trips and stops (cities within trips).
+ * @author Traveloop Team
+ */
+
 const express = require('express');
 const router = express.Router();
 const tc = require('../controllers/tripController');
