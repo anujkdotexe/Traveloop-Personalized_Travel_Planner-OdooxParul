@@ -26,33 +26,77 @@ Detailed technical documentation is available in the `/docs` directory:
 - [API Reference](docs/API.md)
 - [Database Schema](docs/DATABASE.md)
 
-## 🚦 Getting Started
+## ✅ Requirements
 
 ### Prerequisites
 - Node.js (v18+)
 - PostgreSQL (v14+)
+- npm (ships with Node.js)
 
-### Installation
+### Recommended Tooling
+- VS Code with ESLint extension
+- Postman or curl for API testing
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/anujkdotexe/Traveloop-Personalized_Travel_Planner-OdooxParul
-   ```
+## 🚦 Setup
 
-2. **Backend Setup**
-   ```bash
-   cd server
-   npm install
-   # Create .env based on .env.example
-   npm start
-   ```
+### 1. Clone and enter the project
 
-3. **Frontend Setup**
-   ```bash
-   cd client
-   npm install
-   npm run dev
-   ```
+```bash
+git clone https://github.com/anujkdotexe/Traveloop-Personalized_Travel_Planner-OdooxParul.git
+cd Traveloop-Personalized_Travel_Planner-OdooxParul
+```
+
+### 2. Configure and run backend
+
+```bash
+cd server
+npm install
+cp .env.example .env
+```
+
+Update `.env` values for your local PostgreSQL instance (especially `DB_*` fields and `JWT_SECRET`), then start the API:
+
+```bash
+npm run dev
+```
+
+The backend runs at `http://localhost:5000` by default.
+
+### 3. Run frontend
+
+In a new terminal:
+
+```bash
+cd client
+npm install
+npm run dev
+```
+
+The frontend runs at `http://localhost:5173` by default.
+
+## 🔌 API Usage
+
+Base URL (local): `http://localhost:5000`
+
+### Register
+
+```bash
+curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Demo User","email":"demo@example.com","password":"Password123!"}'
+```
+
+### Login
+
+```bash
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"demo@example.com","password":"Password123!"}'
+```
+
+Use the returned JWT in the `Authorization: Bearer <token>` header for protected endpoints.
+
+For full endpoint coverage, see [API Reference](docs/API.md).
 
 ## 📜 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
