@@ -11,7 +11,6 @@ Traveloop is a full-stack travel planning platform for building multi-stop itine
 - Admin analytics for platform insights.
 
 ## Technology Stack
-
 - Frontend: React + Vite, CSS3, SVG-only iconography
 - Backend: Node.js, Express.js
 - Database: PostgreSQL with UUID primary keys
@@ -29,13 +28,6 @@ Traveloop is a full-stack travel planning platform for building multi-stop itine
 
 - [Architecture](docs/ARCHITECTURE.md)
 
-## Requirements
-
-- Node.js 18+
-- npm 9+
-- PostgreSQL 13+
-- A valid `JWT_SECRET` for token signing
-
 ## Setup Instructions
 
 ### 1. Database
@@ -51,7 +43,6 @@ DB_PASSWORD=yourpassword
 DB_NAME=traveloop
 DB_PORT=5432
 JWT_SECRET=your_jwt_secret_here
-PORT=5000
 ```
 
 ### 3. Install Dependencies
@@ -123,7 +114,6 @@ curl http://localhost:5000/api/trips \
 | :--- | :--- | :--- |
 | Admin | `admin@traveloop.com` | `Demo@1234` |
 | User | `demo@traveloop.com` | `Demo@1234` |
-
 ## Team
 
 - Anuj Kondawar: Lead, Integration, Auth Flow
