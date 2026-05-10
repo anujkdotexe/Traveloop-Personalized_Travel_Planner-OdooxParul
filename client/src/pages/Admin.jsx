@@ -57,13 +57,18 @@ export default function Admin() {
     if (lineChart.current) lineChart.current.destroy();
     if (pieChart.current) pieChart.current.destroy();
 
+    const growthLabels = stats?.user_growth?.map(g => g.month) || [];
+    const growthData = stats?.user_growth?.map(g => g.count) || [];
+    const catLabels = stats?.categories?.map(c => c.category || 'Other') || [];
+    const catData = stats?.categories?.map(c => c.count) || [];
+
     lineChart.current = new Chart(lineRef.current, {
       type: 'line',
       data: { 
-        labels: stats.user_growth.map(g => g.month), 
+        labels: growthLabels, 
         datasets: [{ 
           label: 'New Users', 
-          data: stats.user_growth.map(g => g.count), 
+          data: growthData, 
           borderColor: '#6366F1', 
           backgroundColor: 'rgba(99,102,241,0.06)', 
           tension: 0.4, 
@@ -80,9 +85,9 @@ export default function Admin() {
     pieChart.current = new Chart(pieRef.current, {
       type: 'doughnut',
       data: { 
-        labels: stats.categories.map(c => c.category || 'Other'), 
+        labels: catLabels, 
         datasets: [{ 
-          data: stats.categories.map(c => c.count), 
+          data: catData, 
           backgroundColor: ['#6366f1','#14b8a6','#f43f5e','#f59e0b','#8b5cf6','#10b981'], 
           borderWidth: 0, 
           hoverOffset: 10 

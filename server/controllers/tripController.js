@@ -69,7 +69,15 @@ exports.createTrip = async (req, res) => {
        RETURNING *`,
       [req.user.id, title, start_date, end_date, description || null, is_public || false]
     );
-    res.status(201).json({ status: 'success', data: result.rows[0] });
+    const trip = result.rows[0];
+
+    // Create Notification
+    await db.query(
+      'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
+      [req.user.id, 'Trip Created!', `Your journey to ${title} has been initialized.`, 'trip']
+    );
+
+    res.status(201).json({ status: 'success', data: trip });
   } catch (err) {
     res.status(500).json({ status: 'error', message: 'Failed to create trip.' });
   }
@@ -94,7 +102,17 @@ exports.updateTrip = async (req, res) => {
     );
     if (result.rows.length === 0)
       return res.status(404).json({ message: 'Trip not found or unauthorized.' });
-    res.json({ status: 'success', data: result.rows[0] });
+    const trip = result.rows[0];
+
+    // Create Notification if visibility changed
+    if (is_public) {
+      await db.query(
+        'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
+        [req.user.id, 'Trip Shared!', `"${trip.title}" is now live in the community feed.`, 'community']
+      );
+    }
+
+    res.json({ status: 'success', data: trip });
   } catch (err) {
     res.status(500).json({ status: 'error', message: 'Failed to update trip.' });
   }
@@ -300,7 +318,7 @@ exports.getTopDestinations = async (req, res) => {
     // Enrich with Unsplash images
     const destinations = result.rows.map(d => ({
       name: d.name + ', ' + d.country,
-      img: `https://source.unsplash.com/featured/400x300?${encodeURIComponent(d.name)}`,
+      img: `https://loremflickr.com/400/300/city,${encodeURIComponent(d.name)}`,
       desc: `${d.count} trips planned here`
     }));
 
