@@ -35,14 +35,14 @@ export default function Signup() {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/auth/register', {
+      const res = await fetch('/api/auth/register', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: `${form.firstName} ${form.lastName}`, email: form.email, password: form.password }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
       showToast('Account created! Signing you in...', 'success');
-      const loginRes = await fetch('http://localhost:5000/api/auth/login', {
+      const loginRes = await fetch('/api/auth/login', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email, password: form.password }),
       });

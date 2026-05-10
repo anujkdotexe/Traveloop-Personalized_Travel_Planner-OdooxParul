@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://traveloop-personalized-travel-planner.onrender.com/api/$1"
+    }
+  ]
+}
