@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Home from './pages/Home';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import CreateTrip from './pages/CreateTrip';
 import MyTrips from './pages/MyTrips';
@@ -19,6 +20,7 @@ import Checklist from './pages/Checklist';
 import Notes from './pages/Notes';
 import Community from './pages/Community';
 import Profile from './pages/Profile';
+import Notifications from './pages/Notifications';
 import Admin from './pages/Admin';
 import SharedView from './pages/SharedView';
 import ExpenseInvoice from './pages/ExpenseInvoice';
@@ -35,6 +37,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/shared/:id" element={<SharedView />} />
 
           {/* ── Authenticated users ─────────────────── */}
@@ -49,6 +52,7 @@ export default function App() {
           <Route path="/checklist/:id"         element={<ProtectedRoute><Checklist /></ProtectedRoute>} />
           <Route path="/notes/:id"             element={<ProtectedRoute><Notes /></ProtectedRoute>} />
           <Route path="/community"             element={<ProtectedRoute><Community /></ProtectedRoute>} />
+          <Route path="/notifications"         element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           <Route path="/profile"              element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/invoice/:id"          element={<ProtectedRoute><ExpenseInvoice /></ProtectedRoute>} />
           <Route path="/support"              element={<ProtectedRoute><Support /></ProtectedRoute>} />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
 import { useToast, ToastContainer } from '../components/Toast';
 
@@ -19,6 +20,8 @@ export default function Notes() {
   const [active, setActive] = useState(null);
   const [isNew, setIsNew] = useState(false);
   const [newNote, setNewNote] = useState({ content: '' });
+  const [editingNote, setEditingNote] = useState(null);
+  const [editContent, setEditContent] = useState('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -77,6 +80,29 @@ export default function Notes() {
     }
   };
 
+  const saveEdit = async () => {
+    if (!editContent.trim() || !editingNote) return;
+    try {
+      const res = await fetch(`/api/trips/notes/${editingNote.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ content: editContent })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('Note updated!', 'success');
+        setNotes(prev => prev.map(n => n.id === editingNote.id ? data.data : n));
+        setActive(data.data);
+        setEditingNote(null);
+        setEditContent('');
+      } else {
+        showToast(data.message || 'Failed to update note.', 'error');
+      }
+    } catch (err) {
+      showToast('Failed to update note.', 'error');
+    }
+  };
+
   const filtered = notes.filter(n => n.content.toLowerCase().includes(search.toLowerCase()));
 
   if (loading) return <div className="loading-center">Loading...</div>;
@@ -126,7 +152,10 @@ export default function Notes() {
                     <ClockIcon /> {new Date(active.created_at).toLocaleString()}
                   </div>
                 </div>
-                <button className="btn btn-danger btn-sm" onClick={() => deleteNote(active.id)}><TrashIcon /> Delete</button>
+                <div className="flex gap-sm">
+                  <button className="btn btn-outline btn-sm" onClick={() => { setEditingNote(active); setEditContent(active.content); }}>Edit</button>
+                  <button className="btn btn-danger btn-sm" onClick={() => deleteNote(active.id)}><TrashIcon /> Delete</button>
+                </div>
               </div>
               <div style={{ whiteSpace: 'pre-wrap', fontSize: '1.1rem', lineHeight: 1.8, color: 'var(--text-main)' }}>
                 {active.content}
@@ -140,6 +169,17 @@ export default function Notes() {
           )}
         </main>
       </div>
+
+      <Modal isOpen={!!editingNote} onClose={() => { setEditingNote(null); setEditContent(''); }} title="Edit Note" maxWidth="760px">
+        <div className="input-group">
+          <textarea className="input-field" rows={12} style={{ resize: 'none', lineHeight: 1.8, fontSize: '1rem' }} value={editContent} onChange={e => setEditContent(e.target.value)} />
+        </div>
+        <div className="flex justify-end gap-sm">
+          <button className="btn btn-outline" onClick={() => { setEditingNote(null); setEditContent(''); }}>Cancel</button>
+          <button className="btn btn-primary" onClick={saveEdit}>Save Changes</button>
+        </div>
+      </Modal>
+
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </>
   );

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
 import { useToast, ToastContainer } from '../components/Toast';
 
@@ -23,6 +24,7 @@ export default function Checklist() {
   const [filterBy, setFilterBy] = useState('All');
   const [sortBy, setSortBy] = useState('Default');
   const [loading, setLoading] = useState(true);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const fetchItems = async () => {
     try {
@@ -68,13 +70,30 @@ export default function Checklist() {
 
   const removeItem = async (id) => {
     try {
-      await fetch(`/api/trips/checklist/${id}`, {
+      const res = await fetch(`/api/trips/checklist/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      fetchItems();
+      if (res.ok) fetchItems();
     } catch (err) {
       showToast('Delete failed.', 'error');
+    }
+  };
+
+  const resetChecklist = async () => {
+    try {
+      const res = await fetch(`/api/trips/checklist/${tripId}/reset`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        showToast('Checklist reset.', 'success');
+        fetchItems();
+      }
+    } catch (err) {
+      showToast('Reset failed.', 'error');
+    } finally {
+      setShowResetConfirm(false);
     }
   };
 
@@ -119,6 +138,7 @@ export default function Checklist() {
           <div><h1>Packing Checklist</h1><p>Stay organized for your journey.</p></div>
           <div className="flex gap-sm">
             <button className="btn btn-outline" onClick={() => window.print()}><PrintIcon /> Download PDF</button>
+            <button className="btn btn-outline" onClick={() => setShowResetConfirm(true)}><RefreshIcon /> Reset Checklist</button>
 
           </div>
         </div>
@@ -182,6 +202,15 @@ export default function Checklist() {
           ))}
         </div>
       </div>
+
+      <Modal isOpen={showResetConfirm} onClose={() => setShowResetConfirm(false)} title="Reset Checklist" maxWidth="420px">
+        <p style={{ marginBottom: '1.5rem', color: 'var(--text-muted)' }}>This will mark every checklist item as unpacked so the trip can be reused.</p>
+        <div className="flex justify-end gap-sm">
+          <button className="btn btn-outline" onClick={() => setShowResetConfirm(false)}>Cancel</button>
+          <button className="btn btn-primary" onClick={resetChecklist}>Reset</button>
+        </div>
+      </Modal>
+
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </>
   );

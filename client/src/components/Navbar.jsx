@@ -120,6 +120,7 @@ function AccountDropdown({ user, isAdmin, onLogout }) {
 function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const { token } = useAuth();
+  const navigate = useNavigate();
 
   const fetchNotifs = async () => {
     try {
@@ -178,7 +179,7 @@ function NotificationBell() {
             ))}
           </div>
           <div style={{ padding: '0.75rem 1.25rem', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
-            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }} onClick={close}>View all notifications</span>
+            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }} onClick={() => { close(); navigate('/notifications'); }}>View all notifications</span>
           </div>
         </>
       )}

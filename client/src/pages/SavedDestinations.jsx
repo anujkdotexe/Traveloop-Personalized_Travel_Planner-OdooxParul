@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { useAuth } from '../context/AuthContext';
 import { useToast, ToastContainer } from '../components/Toast';
 
 const HeartIcon = () => <svg className="icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>;
@@ -8,7 +8,7 @@ const MapPinIcon = () => <svg className="icon" viewBox="0 0 24 24"><path d="M21 
 const TrashIcon = () => <svg className="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
 
 export default function SavedDestinations() {
-  const { token } = useAuth();
+  const navigate = useNavigate();
   const { toasts, showToast, dismissToast } = useToast();
   const [saved, setSaved] = useState([
     { id: 1, name: 'Tokyo', country: 'Japan', img: 'https://images.unsplash.com/photo-1540959733332-e94e270b4d8a?auto=format&fit=crop&w=400&q=80' },
@@ -43,7 +43,7 @@ export default function SavedDestinations() {
                   <MapPinIcon /> {d.country}
                 </div>
                 <h3 style={{ marginBottom: '1rem' }}>{d.name}</h3>
-                <button className="btn btn-primary w-full btn-sm">Plan a Trip</button>
+                <button className="btn btn-primary w-full btn-sm" onClick={() => navigate('/create-trip')}>Plan a Trip</button>
               </div>
             </div>
           ))}

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
+import { useToast, ToastContainer } from '../components/Toast';
 
 const SearchIcon = () => <svg className="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
 const CopyIcon = () => <svg className="icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>;
@@ -14,12 +16,14 @@ function formatDate(d) {
 }
 
 export default function Community() {
+  const navigate = useNavigate();
   const { token } = useAuth();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [liked, setLiked] = useState({});
   const [copied, setCopied] = useState(null);
+  const { showToast, toasts, dismissToast } = useToast();
 
   const fetchTrips = async () => {
     try {
@@ -37,10 +41,28 @@ export default function Community() {
     fetchTrips();
   }, []);
 
-  const handleCopy = (id) => {
-    setCopied(id);
-    // Logic to call API and copy trip would go here
-    setTimeout(() => setCopied(null), 2500);
+  const handleCopy = async (id) => {
+    if (!token) {
+      showToast('Log in to copy this trip!', 'info');
+      setTimeout(() => navigate('/login'), 1500);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/trips/public/copy/${id}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCopied(id);
+        showToast('Trip added to your account!', 'success');
+        setTimeout(() => navigate(`/itinerary/${data.data.id}`), 1500);
+      } else {
+        showToast(data.message || 'Could not copy trip.', 'error');
+      }
+    } catch {
+      showToast('Copy failed. Please try again.', 'error');
+    }
   };
 
   const filtered = trips.filter(t => 
@@ -108,6 +130,7 @@ export default function Community() {
           ))}
         </div>
       </div>
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </>
   );
 }

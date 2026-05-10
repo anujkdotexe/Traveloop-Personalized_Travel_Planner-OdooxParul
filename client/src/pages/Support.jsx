@@ -1,5 +1,4 @@
 import Navbar from '../components/Navbar';
-import { useAuth } from '../context/AuthContext';
 
 export default function Support() {
   return (

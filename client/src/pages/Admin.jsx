@@ -4,10 +4,12 @@ import Modal from '../components/Modal';
 import Chart from 'chart.js/auto';
 import { useAuth } from '../context/AuthContext';
 
-const UsersIcon = () => <svg className="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
-const MapIcon = () => <svg className="icon" viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>;
-const TrendIcon = () => <svg className="icon" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>;
+const UsersIcon    = () => <svg className="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+const MapIcon      = () => <svg className="icon" viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>;
+const TrendIcon    = () => <svg className="icon" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>;
 const ActivityIcon = () => <svg className="icon" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
+const GlobeIcon    = () => <svg className="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
+const ChartIcon    = () => <svg className="icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>;
 
 const KPI = ({ label, value, delta, icon: Icon, color }) => (
   <div className="card" style={{ borderLeft: `4px solid ${color}` }}>
@@ -176,10 +178,10 @@ export default function Admin() {
         </div>
 
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '1.5rem', marginBottom: 'var(--space-xl)' }}>
-          <KPI label="Total Users" value={stats?.total_users.toLocaleString()} delta={`${stats?.user_change >= 0 ? '+' : ''}${stats?.user_change}% vs last month`} icon={UsersIcon} color="var(--primary)" />
-          <KPI label="Active Trips" value={stats?.total_trips.toLocaleString()} delta={`${stats?.trip_change >= 0 ? '+' : ''}${stats?.trip_change}% vs last month`} icon={MapIcon} color="var(--secondary)" />
-          <KPI label="Public Itineraries" value={stats?.public_trips.toLocaleString()} icon={GlobeIcon} color="var(--accent)" />
-          <KPI label="Planned Activities" value={stats?.total_activities.toLocaleString()} icon={ChartIcon} color="var(--success)" />
+          <KPI label="Total Users"        value={stats?.total_users?.toLocaleString() ?? '—'} delta={stats ? `${stats.user_change >= 0 ? '+' : ''}${stats.user_change}% vs last month` : undefined} icon={UsersIcon}    color="var(--primary)"   />
+          <KPI label="Active Trips"        value={stats?.total_trips?.toLocaleString() ?? '—'} delta={stats ? `${stats.trip_change >= 0 ? '+' : ''}${stats.trip_change}% vs last month` : undefined} icon={MapIcon}       color="var(--secondary)" />
+          <KPI label="Public Itineraries"  value={stats?.public_trips?.toLocaleString() ?? '—'} icon={GlobeIcon}    color="var(--accent)"    />
+          <KPI label="Planned Activities"  value={stats?.total_activities?.toLocaleString() ?? '—'} icon={ChartIcon} color="var(--success)"   />
         </div>
 
         <div className="grid" style={{ gridTemplateColumns: '1.5fr 1fr', gap: 'var(--space-lg)', marginBottom: 'var(--space-xl)' }}>

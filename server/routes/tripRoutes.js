@@ -30,10 +30,13 @@ router.post('/expenses',    verifyUser, tc.addExpense);
 router.get('/:id/checklist',              verifyUser, tc.getChecklist);
 router.post('/checklist',                 verifyUser, tc.addChecklistItem);
 router.patch('/checklist/:itemId/toggle', verifyUser, tc.toggleChecklistItem);
+router.delete('/checklist/:itemId',       verifyUser, tc.deleteChecklistItem);
+router.patch('/checklist/:tripId/reset',  verifyUser, tc.resetChecklist);
 
 // ─── Notes ───────────────────────────────────────────────────────────────────
 router.get('/:id/notes',       verifyUser, tc.getNotes);
 router.post('/notes',          verifyUser, tc.addNote);
+router.put('/notes/:noteId',    verifyUser, tc.updateNote);
 router.delete('/notes/:noteId', verifyUser, tc.deleteNote);
 
 // ─── Community & Destinations ─────────────────────────────────────────────

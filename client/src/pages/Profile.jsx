@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { useToast, ToastContainer } from '../components/Toast';
@@ -14,18 +14,38 @@ const EyeIcon = () => <svg className="icon icon-sm" viewBox="0 0 24 24"><path d=
 
 export default function Profile() {
   const { user, token, updateUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ 
     name: user?.name || '', 
     email: user?.email || '', 
     bio: user?.bio || '', 
-    language: user?.language_preference || 'English' 
+    language: user?.language_preference || 'English',
+    profileImage: user?.profileImage || ''
   });
   const [errors, setErrors] = useState({});
   const { toasts, showToast, dismissToast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const set = (f) => (e) => setForm(p => ({ ...p, [f]: e.target.value }));
   const savedDests = ['Tokyo, Japan', 'Rome, Italy', 'New York, USA'];
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setUploading(true);
+    // In a real app, you'd upload to S3/Cloudinary. 
+    // Here we'll just simulate it and update the local state for demo.
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setForm(prev => ({ ...prev, profileImage: reader.result }));
+      updateUser({ ...user, profileImage: reader.result });
+      showToast('Profile photo updated locally.', 'success');
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -103,11 +123,14 @@ export default function Profile() {
         <div className="card flex items-center gap-xl" style={{ marginBottom: 'var(--space-xl)', padding: '2rem' }}>
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <div style={{ width: 110, height: 110, borderRadius: '50%', overflow: 'hidden', border: '4px solid var(--bg-surface-alt)', boxShadow: 'var(--shadow-md)', background: 'var(--bg-surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80" alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={form.profileImage || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80"} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: uploading ? 0.5 : 1 }} />
             </div>
-            <button style={{ position: 'absolute', bottom: 0, right: 0, background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '50%', width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><CameraIcon /></button>
+            <label style={{ position: 'absolute', bottom: 0, right: 0, background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '50%', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
+              <CameraIcon />
+              <input type="file" hidden accept="image/*" onChange={handlePhotoUpload} />
+            </label>
           </div>
-          <div><h2 style={{ marginBottom: 4 }}>{form.name}</h2><p style={{ fontSize: '0.9rem' }}>Travel Enthusiast &bull; Member since Jan 2024</p></div>
+          <div><h2 style={{ marginBottom: 4 }}>{form.name}</h2><p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Travel Enthusiast &bull; Member since Jan 2024</p></div>
         </div>
         <div className="grid" style={{ gridTemplateColumns: '1.5fr 1fr', gap: 'var(--space-lg)' }}>
           <div>
@@ -143,11 +166,11 @@ export default function Profile() {
                     <p style={{ fontSize: '0.8rem' }}>Add an extra layer of account security</p>
                   </div>
                 </div>
-                <button className="btn btn-outline btn-sm">Enable</button>
+                <button className="btn btn-outline btn-sm" onClick={() => showToast('Two-factor setup is not available yet.', 'info')}>Enable</button>
               </div>
               <div className="flex justify-between items-center" style={{ paddingTop: '1rem' }}>
                 <div><div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Change Password</div><p style={{ fontSize: '0.8rem' }}>Last changed 3 months ago</p></div>
-                <button className="btn btn-outline btn-sm">Update</button>
+                <button className="btn btn-outline btn-sm" onClick={() => navigate('/forgot-password')}>Update</button>
               </div>
             </div>
           </div>
@@ -160,7 +183,7 @@ export default function Profile() {
                   <button className="btn btn-ghost btn-icon-sm" style={{ color: 'var(--text-muted)' }}><TrashIcon /></button>
                 </div>
               ))}
-              <button className="btn btn-outline w-full" style={{ marginTop: '1rem' }}>Add Destination</button>
+              <button className="btn btn-outline w-full" style={{ marginTop: '1rem' }} onClick={() => navigate('/saved-destinations')}>Add Destination</button>
             </div>
             <div className="card" style={{ borderColor: 'var(--accent)', background: 'var(--accent-light)' }}>
               <h4 style={{ color: 'var(--accent)', marginBottom: '0.5rem' }}>Danger Zone</h4>

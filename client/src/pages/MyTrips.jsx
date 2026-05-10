@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
 import { useToast, ToastContainer } from '../components/Toast';
 
@@ -35,8 +36,11 @@ export default function MyTrips() {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
+  const [groupBy, setGroupBy] = useState('none');
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const { token } = useAuth();
   const { toasts, showToast, dismissToast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!token) return;
@@ -48,7 +52,6 @@ export default function MyTrips() {
   }, [token]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this trip? This cannot be undone.')) return;
     try {
       const res = await fetch(`/api/trips/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error();
@@ -56,6 +59,8 @@ export default function MyTrips() {
       showToast('Trip deleted.', 'success');
     } catch {
       showToast('Failed to delete trip.', 'error');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -70,13 +75,34 @@ export default function MyTrips() {
   if (sortBy === 'name')      filtered.sort((a, b) => a.title.localeCompare(b.title));
   if (sortBy === 'start')     filtered.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 
+  // Group trips
+  const grouped = (() => {
+    if (groupBy === 'status') {
+      return filtered.reduce((acc, t) => {
+        const key = t._status.charAt(0).toUpperCase() + t._status.slice(1);
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(t);
+        return acc;
+      }, {});
+    }
+    if (groupBy === 'month') {
+      return filtered.reduce((acc, t) => {
+        const key = t.start_date ? new Date(t.start_date).toLocaleString('default', { month: 'long', year: 'numeric' }) : 'No Date';
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(t);
+        return acc;
+      }, {});
+    }
+    return { '': filtered };
+  })();
+
   return (
     <>
       <Navbar />
       <div className="page-container">
         <div className="flex justify-between items-center mb-lg">
           <div><h1>My Trips</h1><p>All your travel plans in one place.</p></div>
-          <Link to="/dashboard" className="btn btn-primary"><PlusIcon /> Plan New Trip</Link>
+          <button onClick={() => navigate('/dashboard')} className="btn btn-primary"><PlusIcon /> Plan New Trip</button>
         </div>
 
         <div className="toolbar">
@@ -91,10 +117,10 @@ export default function MyTrips() {
             <option value="name">Sort: Name</option>
             <option value="start">Sort: Start Date</option>
           </select>
-          <select className="input-field" style={{ width: 'auto', minWidth: 120 }}>
-            <option>Group by: None</option>
-            <option>Group by: Status</option>
-            <option>Group by: Month</option>
+          <select className="input-field" style={{ width: 'auto', minWidth: 130 }} value={groupBy} onChange={e => setGroupBy(e.target.value)}>
+            <option value="none">Group by: None</option>
+            <option value="status">Group by: Status</option>
+            <option value="month">Group by: Month</option>
           </select>
         </div>
 
@@ -114,41 +140,57 @@ export default function MyTrips() {
         {loading ? (
           <div className="loading-center"><div className="spinner" /></div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {filtered.length === 0 && (
-              <div className="card text-center" style={{ padding: 'var(--space-xl)' }}>
-                <p>No trips found. Start planning your next adventure!</p>
-              </div>
-            )}
-            {filtered.map(trip => (
-              <div key={trip.id} className="card card-hover" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1.25rem 1.75rem', borderRadius: 'var(--radius-md)' }}>
-                <div style={{ width: 80, height: 80, borderRadius: 'var(--radius-sm)', background: 'linear-gradient(135deg,var(--primary),var(--secondary))', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1.5rem', fontWeight: 800 }}>
-                  {trip.title?.charAt(0).toUpperCase()}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div className="flex items-center gap-sm" style={{ marginBottom: 6 }}>
-                    <h4>{trip.title}</h4>
-                    <span className={`badge ${statusBadgeClass(trip._status)}`}>{trip._status}</span>
-                  </div>
-                  <div className="flex items-center gap-lg" style={{ color: 'var(--text-muted)', fontSize: '0.83rem' }}>
-                    <span className="flex items-center gap-xs"><CalIcon /> {formatDate(trip.start_date)} &mdash; {formatDate(trip.end_date)}</span>
-                    <span className="flex items-center gap-xs"><PinIcon /> {trip.stop_count || 0} stops</span>
-                  </div>
-                  {trip.description && <p style={{ marginTop: 4, fontSize: '0.82rem' }}>{trip.description}</p>}
-                </div>
-                <div className="flex gap-sm">
-                  <Link to={`/itinerary/${trip.id}`} className="btn btn-primary btn-sm"><EyeIcon /> View</Link>
-                  <Link to={`/budget/${trip.id}`} className="btn btn-outline btn-sm">Budget</Link>
-                  <Link to={`/invoice/${trip.id}`} className="btn btn-outline btn-sm">Invoice</Link>
-                  <Link to={`/checklist/${trip.id}`} className="btn btn-outline btn-sm">Checklist</Link>
-                  <Link to={`/notes/${trip.id}`} className="btn btn-outline btn-sm">Notes</Link>
-                  <button className="btn btn-danger btn-icon-sm" onClick={() => handleDelete(trip.id)}><TrashIcon /></button>
+          <div>
+            {Object.entries(grouped).map(([group, groupTrips]) => (
+              <div key={group}>
+                {group && <h4 style={{ padding: '0.5rem 0', marginTop: '1.5rem', borderBottom: '1px solid var(--border)', marginBottom: '1rem', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>{group}</h4>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+                  {groupTrips.length === 0 && (
+                    <div className="card text-center" style={{ padding: 'var(--space-xl)' }}>
+                      <p>No trips found. Start planning your next adventure!</p>
+                    </div>
+                  )}
+                  {groupTrips.map(trip => (
+                    <div key={trip.id} className="card card-hover" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1.25rem 1.75rem', borderRadius: 'var(--radius-md)' }}>
+                      <div style={{ width: 80, height: 80, borderRadius: 'var(--radius-sm)', background: 'linear-gradient(135deg,var(--primary),var(--secondary))', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1.5rem', fontWeight: 800 }}>
+                        {trip.title?.charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div className="flex items-center gap-sm" style={{ marginBottom: 6 }}>
+                          <h4>{trip.title}</h4>
+                          <span className={`badge ${statusBadgeClass(trip._status)}`}>{trip._status}</span>
+                        </div>
+                        <div className="flex items-center gap-lg" style={{ color: 'var(--text-muted)', fontSize: '0.83rem' }}>
+                          <span className="flex items-center gap-xs"><CalIcon /> {formatDate(trip.start_date)} &mdash; {formatDate(trip.end_date)}</span>
+                          <span className="flex items-center gap-xs"><PinIcon /> {trip.stop_count || 0} stops</span>
+                        </div>
+                        {trip.description && <p style={{ marginTop: 4, fontSize: '0.82rem' }}>{trip.description}</p>}
+                      </div>
+                      <div className="flex gap-sm">
+                        <Link to={`/itinerary/${trip.id}`} className="btn btn-primary btn-sm"><EyeIcon /> View</Link>
+                        <Link to={`/budget/${trip.id}`} className="btn btn-outline btn-sm">Budget</Link>
+                        <Link to={`/invoice/${trip.id}`} className="btn btn-outline btn-sm">Invoice</Link>
+                        <Link to={`/checklist/${trip.id}`} className="btn btn-outline btn-sm">Checklist</Link>
+                        <Link to={`/notes/${trip.id}`} className="btn btn-outline btn-sm">Notes</Link>
+                        <button className="btn btn-danger btn-icon-sm" onClick={() => setDeleteTarget(trip.id)}><TrashIcon /></button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Trip" maxWidth="420px">
+        <p style={{ marginBottom: '1.5rem', color: 'var(--text-muted)' }}>Are you sure you want to delete this trip? This action cannot be undone and all stops, activities, and notes will be permanently removed.</p>
+        <div className="flex justify-end gap-sm">
+          <button className="btn btn-outline" onClick={() => setDeleteTarget(null)}>Cancel</button>
+          <button className="btn btn-danger" onClick={() => handleDelete(deleteTarget)}>Delete Trip</button>
+        </div>
+      </Modal>
+
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </>
   );

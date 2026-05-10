@@ -23,6 +23,7 @@ export default function ItineraryView() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeStopId, setActiveStopId] = useState(null);
+  const [viewMode, setViewMode] = useState('list');
 
   const fetchTrip = async () => {
     try {
@@ -44,16 +45,29 @@ export default function ItineraryView() {
   useEffect(() => { if (token) fetchTrip(); }, [id, token]);
 
   const activeStop = useMemo(() => data?.stops.find(s => s.id === activeStopId), [data, activeStopId]);
-  const stopActivities = useMemo(() => data?.activities.filter(a => a.stop_id === activeStopId) || [], [data, activeStopId]);
+  const stopActivities = useMemo(() => activeStop?.activities || [], [activeStop]);
   
-  const country = useMemo(() => data?.stops[0]?.country || 'India', [data]);
+  const country = useMemo(() => activeStop?.country || data?.stops[0]?.country || 'India', [activeStop, data]);
   const format = (n) => formatCurrency(n, country);
   
-  const totalCost = data?.activities.reduce((sum, a) => sum + Number(a.cost_estimate || 0), 0) || 0;
+  const totalCost = data?.stops?.reduce((sum, stop) =>
+    sum + (stop.activities || []).reduce((s, a) => s + Number(a.cost_estimate || 0), 0), 0) || 0;
   
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    showToast('Link copied to clipboard!', 'success');
+    const url = window.location.href;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url)
+        .then(() => showToast('Link copied to clipboard!', 'success'))
+        .catch(() => { document.execCommand('copy'); showToast('Link copied!', 'success'); });
+    } else {
+      try {
+        const el = document.createElement('textarea');
+        el.value = url; document.body.appendChild(el);
+        el.select(); document.execCommand('copy');
+        document.body.removeChild(el);
+        showToast('Link copied!', 'success');
+      } catch { showToast('Could not copy link.', 'error'); }
+    }
   };
 
   if (loading) return <div className="loading-center">Loading Itinerary...</div>;
@@ -71,6 +85,10 @@ export default function ItineraryView() {
           </div>
         </div>
         <div className="flex items-center gap-sm">
+          <div className="flex items-center gap-xs" style={{ marginRight: 8 }}>
+            <button className={`btn btn-sm ${viewMode === 'list' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setViewMode('list')}>List</button>
+            <button className={`btn btn-sm ${viewMode === 'calendar' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setViewMode('calendar')}>Calendar</button>
+          </div>
           <button onClick={handleShare} className="btn btn-outline btn-sm"><ShareIcon /> Share</button>
           <button onClick={() => window.print()} className="btn btn-outline btn-sm">Download Itinerary (PDF)</button>
 
@@ -93,7 +111,7 @@ export default function ItineraryView() {
             {[
               { label: 'Destinations', val: data.stops.length },
               { label: 'Est. Budget', val: format(totalCost) },
-              { label: 'Activities', val: data.activities.length },
+              { label: 'Activities', val: data.stops.reduce((s, stop) => s + (stop.activities?.length || 0), 0) },
             ].map(stat => (
               <div key={stat.label} style={{ textAlign: 'center', background: 'rgba(255,255,255,0.15)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-md)' }}>
                 <div style={{ color: '#fff', fontWeight: 800, fontSize: '1.2rem' }}>{stat.val}</div>
@@ -125,41 +143,80 @@ export default function ItineraryView() {
         </aside>
 
         <main id="printable-itinerary">
-          <div className="flex items-center gap-sm mb-lg">
-            <h3 style={{ margin: 0 }}>{activeStop?.city_name} Plan</h3>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{stopActivities.length} activities scheduled</span>
-          </div>
+          {viewMode === 'list' ? (
+            <>
+              <div className="flex items-center gap-sm mb-lg">
+                <h3 style={{ margin: 0 }}>{activeStop?.city_name} Plan</h3>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{stopActivities.length} activities scheduled</span>
+              </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {stopActivities.map((act) => (
-              <div key={act.id} className="card" style={{ padding: '1.25rem', borderLeft: `4px solid ${CATEGORY_COLORS[act.category] || 'var(--primary)'}` }}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-sm">
-                      <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--primary)' }}>{act.scheduled_time || 'No Time'}</span>
-                      <span style={{ padding: '2px 10px', background: `${CATEGORY_COLORS[act.category] || 'var(--primary)'}22`, color: CATEGORY_COLORS[act.category] || 'var(--primary)', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: 700 }}>{act.category || 'General'}</span>
-                    </div>
-                    <h4 style={{ margin: '6px 0 4px' }}>{act.activity_name}</h4>
-                    {act.duration_minutes && (
-                      <div className="flex items-center gap-xs" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        <ClockIcon /> {act.duration_minutes} mins
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {stopActivities.map((act) => (
+                  <div key={act.id} className="card" style={{ padding: '1.25rem', borderLeft: `4px solid ${CATEGORY_COLORS[act.category] || 'var(--primary)'}` }}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-sm">
+                          <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--primary)' }}>{act.scheduled_time || 'No Time'}</span>
+                          <span style={{ padding: '2px 10px', background: `${CATEGORY_COLORS[act.category] || 'var(--primary)'}22`, color: CATEGORY_COLORS[act.category] || 'var(--primary)', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: 700 }}>{act.category || 'General'}</span>
+                        </div>
+                        <h4 style={{ margin: '6px 0 4px' }}>{act.activity_name}</h4>
+                        {act.duration_minutes && (
+                          <div className="flex items-center gap-xs" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            <ClockIcon /> {act.duration_minutes} mins
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>
-                      {Number(act.cost_estimate) === 0 ? 'FREE' : format(act.cost_estimate)}
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>
+                          {Number(act.cost_estimate) === 0 ? 'FREE' : format(act.cost_estimate)}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
+                {stopActivities.length === 0 && (
+                  <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <p>No activities planned for this stop yet.</p>
+                  </div>
+                )}
               </div>
-            ))}
-            {stopActivities.length === 0 && (
-              <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                <p>No activities planned for this stop yet.</p>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-sm mb-lg">
+                <h3 style={{ margin: 0 }}>Calendar View</h3>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{data.stops.length} stops in this trip</span>
               </div>
-            )}
-          </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {data.stops.map((stop) => (
+                  <div key={stop.id} className="card" style={{ padding: '1.25rem', borderLeft: `4px solid ${stop.id === activeStopId ? 'var(--primary)' : 'var(--border)'}` }}>
+                    <div className="flex justify-between items-start" style={{ marginBottom: '1rem' }}>
+                      <div>
+                        <h4 style={{ marginBottom: 4 }}>{stop.city_name}</h4>
+                        <p style={{ fontSize: '0.85rem' }}>{stop.country}</p>
+                      </div>
+                      <div style={{ textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        <div>{new Date(stop.arrival_date).toLocaleDateString()} - {new Date(stop.departure_date).toLocaleDateString()}</div>
+                        <div style={{ marginTop: 4 }}>{stop.activities?.length || 0} activities</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {(stop.activities || []).map(act => (
+                        <div key={act.id} className="flex justify-between items-center" style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-md)', background: 'var(--bg-surface-alt)' }}>
+                          <div>
+                            <div style={{ fontWeight: 700, marginBottom: 2 }}>{act.activity_name}</div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{act.scheduled_time || 'No time'} &bull; {act.category || 'General'}</div>
+                          </div>
+                          <div style={{ fontWeight: 800 }}>{Number(act.cost_estimate) === 0 ? 'FREE' : format(act.cost_estimate)}</div>
+                        </div>
+                      ))}
+                      {(stop.activities || []).length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No activities planned for this stop yet.</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </main>
       </div>
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />

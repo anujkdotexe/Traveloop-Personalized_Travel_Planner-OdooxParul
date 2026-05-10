@@ -8,7 +8,7 @@ const MapIcon = () => <svg className="icon" viewBox="0 0 24 24"><polygon points=
 function validateEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 
 export default function Signup() {
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', city: '', country: '', password: '', confirm: '' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', city: '', country: '', password: '', confirm: '', bio: '' });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -41,9 +41,10 @@ export default function Signup() {
           name: `${form.firstName} ${form.lastName}`, 
           email: form.email, 
           password: form.password,
-          phone: form.phone,
-          city: form.city,
-          country: form.country
+          phone: form.phone || null,
+          city: form.city || null,
+          country: form.country || null,
+          bio: form.bio || null
         }),
       });
       const data = await res.json();
@@ -97,7 +98,7 @@ export default function Signup() {
           </div>
           <div className="input-group">
             <label className="input-label" htmlFor="additionalInfo">Additional Information</label>
-            <textarea id="additionalInfo" className="input-field" rows={3} placeholder="Tell us something about yourself..." style={{ resize: 'none' }} />
+            <textarea id="additionalInfo" className="input-field" rows={3} placeholder="Tell us something about yourself..." style={{ resize: 'none' }} value={form.bio} onChange={set('bio')} />
           </div>
           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             {field('password', 'Password', 'password', '••••••••')}

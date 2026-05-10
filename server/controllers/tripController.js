@@ -288,6 +288,26 @@ exports.toggleChecklistItem = async (req, res) => {
   }
 };
 
+exports.deleteChecklistItem = async (req, res) => {
+  const { itemId } = req.params;
+  try {
+    await db.query('DELETE FROM checklists WHERE id = $1', [itemId]);
+    res.json({ status: 'success', message: 'Checklist item deleted.' });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: 'Failed to delete checklist item.' });
+  }
+};
+
+exports.resetChecklist = async (req, res) => {
+  const { tripId } = req.params;
+  try {
+    await db.query('UPDATE checklists SET is_packed = FALSE WHERE trip_id = $1', [tripId]);
+    res.json({ status: 'success', message: 'Checklist reset.' });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: 'Failed to reset checklist.' });
+  }
+};
+
 // ─── Get/Add/Delete notes for a trip ────────────────────────────────────────
 exports.getNotes = async (req, res) => {
   const { id } = req.params;
@@ -312,6 +332,27 @@ exports.addNote = async (req, res) => {
     res.status(201).json({ status: 'success', data: result.rows[0] });
   } catch (err) {
     res.status(500).json({ status: 'error', message: 'Failed to add note.' });
+  }
+};
+
+exports.updateNote = async (req, res) => {
+  const { noteId } = req.params;
+  const { content } = req.body;
+  if (!content || !content.trim()) {
+    return res.status(400).json({ status: 'error', message: 'Note content is required.' });
+  }
+
+  try {
+    const result = await db.query(
+      'UPDATE notes SET content = $1 WHERE id = $2 RETURNING *',
+      [content, noteId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'Note not found.' });
+    }
+    res.json({ status: 'success', data: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: 'Failed to update note.' });
   }
 };
 

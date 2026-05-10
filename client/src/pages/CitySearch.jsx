@@ -47,11 +47,26 @@ export default function CitySearch() {
   const [costFilter, setCostFilter] = useState('Any Budget');
   const [sortBy, setSortBy] = useState('popularity');
   const [added, setAdded] = useState({});
+  const [trip, setTrip] = useState(null);
+  const [existingStops, setExistingStops] = useState([]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get('tripId');
   const { token } = useAuth();
   const { toasts, showToast, dismissToast } = useToast();
+
+  useEffect(() => {
+    if (!tripId || !token) return;
+    fetch(`/api/trips/${tripId}`, { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => {
+        if (d.status === 'success') {
+          setTrip(d.data.trip);
+          setExistingStops(d.data.stops || []);
+        }
+      })
+      .catch(() => {});
+  }, [tripId, token]);
 
   let cities = CITIES
     .filter(c => region === 'All Regions' || c.region === region)
@@ -69,6 +84,9 @@ export default function CitySearch() {
       return;
     }
     try {
+      const arrivalDate = trip?.start_date || new Date().toISOString().split('T')[0];
+      const departureDate = trip?.end_date || arrivalDate;
+      const sequenceOrder = existingStops.length + 1;
       const res = await fetch('/api/trips/stop', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -76,9 +94,9 @@ export default function CitySearch() {
           trip_id: tripId,
           city_name: city.name,
           country: city.country,
-          arrival_date: new Date().toISOString().split('T')[0], // Fallback
-          departure_date: new Date().toISOString().split('T')[0],
-          sequence_order: 1
+          arrival_date: arrivalDate,
+          departure_date: departureDate,
+          sequence_order: sequenceOrder
         })
       });
       if (!res.ok) throw new Error('Failed to add city');

@@ -115,17 +115,20 @@ exports.login = async (req, res) => {
 
 // Update Profile
 exports.updateProfile = async (req, res) => {
-  const { name, email, bio, language_preference } = req.body;
+  const { name, email, bio, language_preference, phone, city, country } = req.body;
   try {
     const result = await db.query(
       `UPDATE users 
        SET name = COALESCE($1, name), 
            email = COALESCE($2, email), 
            bio = COALESCE($3, bio), 
-           language_preference = COALESCE($4, language_preference)
-       WHERE id = $5 
-       RETURNING id, name, email, role, bio, language_preference, profile_image_url`,
-      [name, email, bio, language_preference, req.user.id]
+           language_preference = COALESCE($4, language_preference),
+           phone = COALESCE($5, phone),
+           city = COALESCE($6, city),
+           country = COALESCE($7, country)
+       WHERE id = $8 
+       RETURNING id, name, email, role, bio, language_preference, profile_image_url, phone, city, country`,
+      [name, email, bio, language_preference, phone, city, country, req.user.id]
     );
     res.json({ status: 'success', data: result.rows[0] });
   } catch (err) {
@@ -140,6 +143,61 @@ exports.deleteAccount = async (req, res) => {
     res.json({ status: 'success', message: 'Account deleted successfully.' });
   } catch (err) {
     res.status(500).json({ status: 'error', message: 'Failed to delete account.' });
+  }
+};
+
+// Forgot Password
+const crypto = require('crypto');
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (user.rows.length === 0) {
+      // Don't reveal if user exists for security
+      return res.json({ status: 'success', message: 'If an account exists, a reset link has been sent.' });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + 3600000); // 1 hour
+
+    await db.query(
+      'UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE email = $3',
+      [token, expiry, email]
+    );
+
+    // Since we don't have SMTP, we log the link for testing/dev
+    console.log(`PASS_RESET_LINK: http://localhost:5173/reset-password/${token}`);
+
+    res.json({ status: 'success', message: 'If an account exists, a reset link has been sent.' });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: 'Something went wrong.' });
+  }
+};
+
+// Reset Password
+exports.resetPassword = async (req, res) => {
+  const { token, password } = req.body;
+  try {
+    const result = await db.query(
+      'SELECT id FROM users WHERE reset_token = $1 AND reset_token_expiry > NOW()',
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ status: 'error', message: 'Invalid or expired token.' });
+    }
+
+    const salt = await bcrypt.genSalt(12);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    await db.query(
+      'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expiry = NULL WHERE id = $2',
+      [hashedPassword, result.rows[0].id]
+    );
+
+    res.json({ status: 'success', message: 'Password reset successful. You can now log in.' });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: 'Reset failed.' });
   }
 };
 

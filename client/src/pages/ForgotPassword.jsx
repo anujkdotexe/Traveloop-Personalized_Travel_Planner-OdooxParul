@@ -1,12 +1,35 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast, ToastContainer } from '../components/Toast';
 
 export default function ForgotPassword() {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
   const { toasts, showToast, dismissToast } = useToast();
-  const handleSubmit = (e) => {
+  
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    showToast('If an account with that email exists, a reset link has been sent.', 'success');
+    if (!email.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message, 'success');
+      } else {
+        showToast(data.message || 'Something went wrong.', 'error');
+      }
+    } catch (err) {
+      showToast('Failed to connect to server.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
+
   return (
     <div className="auth-page">
       <div className="auth-card" style={{ maxWidth: 420 }}>
@@ -17,9 +40,19 @@ export default function ForgotPassword() {
         <form onSubmit={handleSubmit}>
           <div className="input-group">
             <label className="input-label" htmlFor="reset-email">Email Address</label>
-            <input id="reset-email" type="email" className="input-field" placeholder="name@example.com" required />
+            <input 
+              id="reset-email" 
+              type="email" 
+              className="input-field" 
+              placeholder="name@example.com" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required 
+            />
           </div>
-          <button type="submit" className="btn btn-primary w-full" style={{ marginTop: '1rem' }}>Send Reset Link</button>
+          <button type="submit" className="btn btn-primary w-full" style={{ marginTop: '1rem' }} disabled={loading}>
+            {loading ? 'Sending...' : 'Send Reset Link'}
+          </button>
         </form>
         <p className="text-center" style={{ marginTop: '1.5rem', fontSize: '0.9rem' }}>
           <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600 }}>Back to Login</Link>

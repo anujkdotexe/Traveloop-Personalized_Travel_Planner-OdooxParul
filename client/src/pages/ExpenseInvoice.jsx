@@ -66,6 +66,21 @@ export default function ExpenseInvoice() {
 
   if (loading) return <div className="loading-center">Generating Invoice...</div>;
 
+  if (!data) {
+    return (
+      <>
+        <Navbar />
+        <div className="page-container">
+          <div className="card text-center" style={{ padding: '3rem' }}>
+            <h3 style={{ marginBottom: 8 }}>Invoice data is unavailable</h3>
+            <p>We could not load the invoice for this trip.</p>
+          </div>
+        </div>
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      </>
+    );
+  }
+
   return (
     <>
       <Navbar />
