@@ -1,51 +1,61 @@
 # Traveloop System Architecture
 
-Traveloop is a modern, full-stack travel planning platform built with a decoupled architecture for scalability and performance.
+This document describes the high-level architecture and technical stack of the Traveloop platform.
 
-## Technology Stack
-- **Frontend**: React.js with Vite
-- **Styling**: Vanilla CSS (Custom Design System)
-- **State Management**: React Context API
-- **Backend**: Node.js with Express
-- **Database**: PostgreSQL
-- **Deployment**: Vercel (Frontend) + Render (Backend)
+## Architecture Overview
 
-## Architecture Diagram
+Traveloop follows a modern **Client-Server** architecture with a clear separation of concerns between the user interface and data persistence layers.
 
 ```mermaid
 graph TD
-    User((User)) -->|HTTPS| Frontend[React SPA]
-    Frontend -->|API Calls| API[Express API Server]
-    API -->|Auth| JWT[JWT Validation]
-    API -->|Query| DB[(PostgreSQL)]
-    
-    subgraph "External Services"
-        Unsplash[Unsplash API - Imagery]
-        Dicebear[Dicebear - Avatars]
-        Exchange[Currency Exchange API]
+    subgraph Client [Frontend - React]
+        UI[User Interface]
+        State[Context API / Auth]
+        Routes[React Router]
     end
-    
-    Frontend --> Unsplash
-    Frontend --> Dicebear
-    Frontend --> Exchange
+
+    subgraph API [Backend - Node.js/Express]
+        Auth[Auth Middleware]
+        Controllers[Business Logic]
+        Routes_S[API Routing]
+    end
+
+    subgraph Persistence [Database - PostgreSQL]
+        DB[(PostgreSQL)]
+    end
+
+    UI <--> Routes
+    Routes <--> State
+    State <--> Routes_S
+    Routes_S --> Auth
+    Auth --> Controllers
+    Controllers <--> DB
 ```
 
-## Core Modules
+## Technology Stack
 
-### 1. Trip Builder Engine
-A complex state machine that manages the hierarchical relationship between Trips, Stops, and Activities. It ensures chronological consistency and manages cost estimations in real-time.
+### Frontend
+- **React 18**: Component-based UI library.
+- **Vite**: Ultra-fast build tool and dev server.
+- **Vanilla CSS**: Custom design system with CSS variables for maximum flexibility and performance.
+- **Lucide Icons**: Clean, vector-based iconography.
+- **React Router 6**: Client-side routing and navigation.
 
-### 2. Financial Tracking
-Consolidates planned activity costs and actual recorded expenses to provide a comprehensive budget health overview. It features an automated invoice generation system for trip settlement.
+### Backend
+- **Node.js**: JavaScript runtime.
+- **Express.js**: Lightweight web framework for API development.
+- **JWT (JSON Web Tokens)**: Secure, stateless authentication.
+- **Bcrypt**: Industrial-strength password hashing.
+- **PG (Node-Postgres)**: Non-blocking PostgreSQL client.
 
-### 3. Contextual Data Sync
-Uses React Context to share authentication state and live currency conversion rates across all components, ensuring a consistent user experience without redundant API calls.
+### Infrastructure
+- **Vercel**: High-performance hosting for the React frontend.
+- **Render**: Managed hosting for the Node.js API and PostgreSQL database.
 
-### 4. Admin Command Center
-A restricted dashboard for platform oversight, featuring real-time usage analytics, user management, and system-wide notification broadcasting.
-
-## Deployment Strategy
-The application follows a standard CI/CD pipeline:
-1. **Source Control**: GitHub (Branch: `Second`)
-2. **Backend**: Render.com (Connected to Managed PostgreSQL)
-3. **Frontend**: Vercel.com (Handles SPA routing and Static Assets)
+## Data Flow
+1. **User Action**: User interacts with the UI (e.g., clicks "Add Activity").
+2. **API Call**: Frontend sends an authenticated HTTP request (JWT in header) to the Backend.
+3. **Validation**: Backend middleware verifies the JWT and ensures the user has access.
+4. **Execution**: The Controller executes the requested logic and interacts with the PostgreSQL DB.
+5. **Response**: Backend returns a JSON response to the Frontend.
+6. **UI Update**: Frontend updates local state and provides feedback via Toast notifications.

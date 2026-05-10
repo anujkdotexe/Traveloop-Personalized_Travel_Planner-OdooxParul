@@ -1,59 +1,56 @@
-# Traveloop API Reference
+# Traveloop API Specification
 
-This document provides technical details for the Traveloop REST API. All requests must use the `application/json` Content-Type. Authentication is handled via JWT in the `Authorization` header.
+This document provides a comprehensive overview of the RESTful API endpoints available in the Traveloop platform.
 
-## Authentication
-| Endpoint | Method | Description |
-| :--- | :--- | :--- |
-| `/api/auth/register` | `POST` | Create a new user account |
-| `/api/auth/login` | `POST` | Authenticate and receive JWT |
+## Base URL
+- Local: `http://localhost:5000/api`
+- Production: `https://traveloop-personalized-travel-planner.onrender.com/api`
 
-## Trips
-| Endpoint | Method | Description |
-| :--- | :--- | :--- |
-| `/api/trips` | `GET` | List all trips for current user |
-| `/api/trips` | `POST` | Create a new trip |
-| `/api/trips/:id` | `GET` | Get full trip details (stops + activities) |
-| `/api/trips/:id` | `PUT` | Update trip settings |
-| `/api/trips/:id` | `DELETE` | Remove a trip and all associated data |
+## Authentication (`/auth`)
+Endpoints for user identity and account management.
 
-## Itinerary Management
-| Endpoint | Method | Description |
-| :--- | :--- | :--- |
-| `/api/trips/stop` | `POST` | Add a new destination stop to a trip |
-| `/api/trips/activity` | `POST` | Add an activity to a specific stop |
-| `/api/trips/:id/budget` | `GET` | Get budget breakdown and expense list |
-| `/api/trips/expenses` | `POST` | Record a new expense |
+| Method | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/signup` | None | Register a new user account |
+| `POST` | `/login` | None | Authenticate and receive JWT |
+| `PATCH`| `/update-profile`| JWT | Update user name, email, or bio |
+| `DELETE`| `/delete-account`| JWT | Permanently remove account and data |
 
-## Checklist & Notes
-| Endpoint | Method | Description |
-| :--- | :--- | :--- |
-| `/api/trips/:id/checklist` | `GET` | Fetch all items in the packing list |
-| `/api/trips/checklist` | `POST` | Add a new item to the checklist |
-| `/api/trips/checklist/:id/toggle` | `PATCH` | Mark an item as packed/unpacked |
-| `/api/trips/:id/notes` | `GET` | Fetch all trip notes |
-| `/api/trips/notes` | `POST` | Save a new trip note |
+## Trips (`/trips`)
+Core travel planning and itinerary endpoints.
 
-## Admin Endpoints
-| Endpoint | Method | Description |
-| :--- | :--- | :--- |
-| `/api/admin/analytics` | `GET` | Get platform-wide usage statistics |
-| `/api/admin/users` | `GET` | List all registered users |
-| `/api/admin/users/:id` | `DELETE` | Force remove a user account |
+| Method | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/` | JWT | Get all trips for the authenticated user |
+| `POST` | `/` | JWT | Create a new trip |
+| `GET` | `/:id` | JWT | Get full details for a specific trip |
+| `POST` | `/stop` | JWT | Add a city stop to an itinerary |
+| `POST` | `/activity` | JWT | Add an activity to a specific stop |
+| `GET` | `/:id/budget` | JWT | Get full budget breakdown for a trip |
+| `GET` | `/:id/checklist`| JWT | Get packing checklist for a trip |
 
-## Response Format
-Standard success response:
-```json
-{
-  "status": "success",
-  "data": { ... }
-}
-```
+## Community (`/community`)
+Social features and public trip discovery.
 
-Standard error response:
-```json
-{
-  "status": "error",
-  "message": "Human readable error description"
-}
-```
+| Method | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/feed` | None | Get public trips from the community |
+| `POST` | `/:id/like` | JWT | Like a public trip |
+
+## Notifications (`/notifications`)
+User-specific alerts.
+
+| Method | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/` | JWT | Get recent notifications for the user |
+| `PATCH`| `/read-all` | JWT | Mark all notifications as read |
+
+## Error Responses
+The API uses standard HTTP status codes:
+- `200 OK`: Request succeeded
+- `201 Created`: Resource successfully created
+- `400 Bad Request`: Validation error or invalid input
+- `401 Unauthorized`: Missing or invalid authentication token
+- `403 Forbidden`: Authenticated but lack permissions
+- `404 Not Found`: Resource does not exist
+- `500 Internal Server Error`: Backend crash or database failure

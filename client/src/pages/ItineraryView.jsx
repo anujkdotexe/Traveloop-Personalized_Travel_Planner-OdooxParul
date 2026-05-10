@@ -64,7 +64,8 @@ export default function ItineraryView() {
         </div>
         <div className="flex items-center gap-sm">
           <button onClick={handleShare} className="btn btn-outline btn-sm"><ShareIcon /> Share</button>
-          <button onClick={() => window.print()} className="btn btn-outline btn-sm">Print</button>
+          <button onClick={() => window.print()} className="btn btn-outline btn-sm">Download Itinerary (PDF)</button>
+
           <Link to={`/itinerary/${id}`} className="btn btn-primary btn-sm">Edit Itinerary</Link>
         </div>
       </div>

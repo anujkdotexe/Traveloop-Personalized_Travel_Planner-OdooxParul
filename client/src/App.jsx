@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { CurrencyProvider } from './context/CurrencyContext';
+
 import { ProtectedRoute, AdminRoute } from './routes/ProtectedRoute';
 
 import Login from './pages/Login';

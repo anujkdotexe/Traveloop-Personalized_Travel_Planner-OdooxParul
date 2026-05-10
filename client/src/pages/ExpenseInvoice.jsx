@@ -69,15 +69,17 @@ export default function ExpenseInvoice() {
   return (
     <>
       <Navbar />
-      <div className="page-container no-print">
-        <div className="flex items-center gap-sm mb-lg">
+      <div className="page-container">
+        <div className="flex items-center gap-sm mb-lg no-print">
+
           <Link to={`/budget/${tripId}`} className="btn btn-ghost btn-icon"><ChevronLeftIcon /></Link>
           <div style={{ flex: 1 }}>
             <h1>Expense Invoice</h1>
             <p>Full billing breakdown for your trip.</p>
           </div>
           <div className="flex gap-sm">
-            <button className="btn btn-outline" onClick={handleDownload}><DownloadIcon /> Print Invoice</button>
+            <button className="btn btn-outline" onClick={handleDownload}><DownloadIcon /> Download PDF</button>
+
             <button className="btn btn-outline" onClick={handleSendMail}><MailIcon /> Send as Email</button>
             {status !== 'paid' && <button className="btn btn-primary" onClick={() => setShowConfirm(true)}><CheckCircleIcon /> Mark as Paid</button>}
           </div>
@@ -149,7 +151,8 @@ export default function ExpenseInvoice() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }} className="no-print">
+
             <div className="card">
               <div className="flex items-center gap-sm" style={{ marginBottom: '1.25rem' }}>
                 <DollarIcon />

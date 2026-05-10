@@ -118,7 +118,8 @@ export default function Checklist() {
         <div className="flex justify-between items-center mb-lg no-print">
           <div><h1>Packing Checklist</h1><p>Stay organized for your journey.</p></div>
           <div className="flex gap-sm">
-            <button className="btn btn-outline" onClick={() => window.print()}><PrintIcon /> Print</button>
+            <button className="btn btn-outline" onClick={() => window.print()}><PrintIcon /> Download PDF</button>
+
           </div>
         </div>
 
