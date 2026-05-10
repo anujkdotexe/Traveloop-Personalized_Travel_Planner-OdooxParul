@@ -17,8 +17,8 @@ Traveloop is a **monorepo** split into two independently-runnable packages — a
 │  │  AuthContext  → JWT stored in memory    │    │
 │  │  React Router v6 (18 protected routes)  │    │
 │  │                                         │    │
-│  │  14 SCREENS:                            │    │
-│  │  Login · Signup · Dashboard             │    │
+│  │  15 SCREENS:                            │    │
+│  │  Home · Login · Signup · Dashboard      │    │
 │  │  CreateTrip · ItineraryBuilder          │    │
 │  │  ItineraryView · CitySearch             │    │
 │  │  ActivitySearch · Budget · Invoice      │    │
@@ -91,6 +91,7 @@ All routes are declared in `App.jsx`. Three wrapper components protect routes:
 App.jsx
 ├── Navbar (sticky, avatar dropdown, notification bell)
 ├── AuthContext.Provider
+│   ├── /                → Home.jsx
 │   ├── /login           → Login.jsx
 │   ├── /signup          → Signup.jsx
 │   ├── /forgot-password → ForgotPassword.jsx

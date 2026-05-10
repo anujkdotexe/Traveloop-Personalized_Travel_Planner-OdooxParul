@@ -4,6 +4,7 @@ import { CurrencyProvider } from './context/CurrencyContext';
 import { ProtectedRoute, AdminRoute } from './routes/ProtectedRoute';
 
 import Login from './pages/Login';
+import Home from './pages/Home';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
@@ -29,7 +30,7 @@ export default function App() {
         <BrowserRouter>
         <Routes>
           {/* ── Public ─────────────────────────────── */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

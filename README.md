@@ -62,6 +62,7 @@ Visit `http://localhost:5173`
 
 | # | Screen | Route | Description |
 |---|--------|-------|-------------|
+| 0 | Landing Page | `/` | Product introduction, value prop, and community highlights |
 | 1 | Login | `/login` | Email/password auth with demo user dropdown |
 | 2 | Registration | `/signup` | Full registration: photo, name, phone, city, country, additional info |
 | 3 | Dashboard | `/dashboard` | Hero banner, Group by/Filter/Sort toolbar, trip cards, top destinations |
@@ -99,7 +100,7 @@ OdooxParul/
 │       │   └── Toast.jsx
 │       ├── context/
 │       │   └── AuthContext.jsx # Persistent JWT session
-│       ├── pages/              # 18 page components
+│       ├── pages/              # 18 page components (Home, Dashboard, etc.)
 │       └── routes/
 │           └── ProtectedRoute.jsx  # verifyUser + verifyAdmin guards
 ├── server/                     # Express API
