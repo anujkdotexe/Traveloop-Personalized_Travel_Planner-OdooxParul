@@ -2,7 +2,16 @@ const db = require('../db/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// User Registration
+/**
+ * @description Handles user registration. Creates a new user account with hashed password.
+ * Generates a unique avatar URL using the DiceBear API seeded with the user name.
+ * @param {Object} req - Express request object
+ * @param {string} req.body.name - User's full name
+ * @param {string} req.body.email - User's email address
+ * @param {string} req.body.password - User's plain-text password (will be hashed)
+ * @param {Object} res - Express response object
+ * @returns {JSON} 201 on success with user data (id, name, email) or 500 on error
+ */
 exports.register = async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password)
@@ -47,7 +56,15 @@ exports.register = async (req, res) => {
   }
 };
 
-// User Login
+/**
+ * @description Handles user login. Validates credentials against stored password hash.
+ * Issues JWT token valid for 8 hours. Determines role by checking if email contains 'admin'.
+ * @param {Object} req - Express request object
+ * @param {string} req.body.email - User's email address
+ * @param {string} req.body.password - User's plain-text password
+ * @param {Object} res - Express response object
+ * @returns {JSON} 200 with token and user data on success, 404/400 on auth failure, 500 on error
+ */
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
