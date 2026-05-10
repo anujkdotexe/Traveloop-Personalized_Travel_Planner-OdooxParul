@@ -1,6 +1,20 @@
+/**
+ * @file adminController.js
+ * @description Controller for admin-only endpoints providing platform analytics
+ * such as total users, total trips, and top destinations. Endpoints should be
+ * protected with admin-only middleware (`verifyAdmin`).
+ * @author Traveloop Team
+ */
+
 const db = require('../db/db');
 
-// ─── Platform analytics ──────────────────────────────────────────────────────
+/**
+ * @description Returns aggregated platform analytics used by the admin dashboard.
+ * Provides total user and trip counts and the top 5 destinations by stop count.
+ * @param {Object} req - Express request object (requires admin auth middleware)
+ * @param {Object} res - Express response object
+ * @returns {JSON} 200 with analytics data or 500 on error
+ */
 exports.getAnalytics = async (req, res) => {
   try {
     const [users, trips, publicTrips, activities, topCities, categories, userGrowth] = await Promise.all([
