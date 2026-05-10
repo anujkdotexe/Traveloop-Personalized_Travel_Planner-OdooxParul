@@ -13,7 +13,7 @@ const ChevronDownIcon = () => <svg className="icon icon-sm" viewBox="0 0 24 24">
 // Demo credentials — shown clearly in UI for hackathon judges
 const DEMO_USERS = [
   {
-    email: 'demouser@traveloop.com',
+    email: 'demo@traveloop.com',
     password: 'Demo@1234',
     name: 'Demo User',
     role: 'user',
@@ -23,7 +23,7 @@ const DEMO_USERS = [
   },
   {
     email: 'admin@traveloop.com',
-    password: 'Admin@1234',
+    password: 'Demo@1234',
     name: 'Admin',
     role: 'admin',
     label: 'Admin',
