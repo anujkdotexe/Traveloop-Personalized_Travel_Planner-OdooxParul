@@ -50,8 +50,30 @@ export default function Checklist() {
             <button className="btn btn-outline"><PrintIcon /> Print</button>
           </div>
         </div>
-        <div style={{ marginBottom: 'var(--space-lg)', maxWidth: 400 }}>
-          <input className="input-field" placeholder="Search items..." value={search} onChange={e => setSearch(e.target.value)} />
+        <div className="toolbar">
+          <div className="toolbar-search-wrap">
+            <div className="input-icon-wrap">
+              <span className="input-icon">
+                <svg className="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </span>
+              <input className="input-field" placeholder="Search checklist items..." value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+          </div>
+          <select className="input-field" style={{ width: 'auto', minWidth: 130 }}>
+            <option>Group by: Category</option>
+            <option>Group by: Status</option>
+            <option>Group by: None</option>
+          </select>
+          <select className="input-field" style={{ width: 'auto', minWidth: 100 }}>
+            <option>Filter: All</option>
+            <option>Filter: Packed</option>
+            <option>Filter: Unpacked</option>
+          </select>
+          <select className="input-field" style={{ width: 'auto', minWidth: 120 }}>
+            <option>Sort: Default</option>
+            <option>Sort: A – Z</option>
+            <option>Sort: Packed First</option>
+          </select>
         </div>
         <div className="card" style={{ marginBottom: 'var(--space-lg)' }}>
           <div className="flex justify-between items-center" style={{ marginBottom: '0.75rem' }}>

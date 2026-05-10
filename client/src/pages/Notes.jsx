@@ -40,7 +40,22 @@ export default function Notes() {
   return (
     <>
       <Navbar />
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', height: 'calc(100vh - 68px)' }}>
+      {/* Standard toolbar — wireframe Screen 13 */}
+      <div style={{ padding: '1rem 5%', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
+        <div className="toolbar" style={{ marginBottom: 0 }}>
+          <div className="toolbar-search-wrap">
+            <div className="input-icon-wrap">
+              <span className="input-icon"><svg className="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+              <input className="input-field" placeholder="Search trip notes..." value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+          </div>
+          <select className="input-field" style={{ width: 'auto', minWidth: 130 }}><option>Group by: All</option><option>Group by: Stop</option><option>Group by: Day</option></select>
+          <select className="input-field" style={{ width: 'auto', minWidth: 100 }}><option>Filter: All</option><option>Filter: Paris</option><option>Filter: London</option></select>
+          <select className="input-field" style={{ width: 'auto', minWidth: 120 }}><option>Sort: Newest</option><option>Sort: Oldest</option><option>Sort: A – Z</option></select>
+          <button className="btn btn-primary btn-sm" onClick={() => setIsNew(true)}><PlusIcon /> Add Note</button>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', height: 'calc(100vh - 120px)' }}>
         <aside style={{ background: 'var(--bg-surface)', borderRight: '1px solid var(--border)', padding: 'var(--space-lg)', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div className="flex justify-between items-center">
             <h3 style={{ fontSize: '1rem' }}>Trip Journal</h3>

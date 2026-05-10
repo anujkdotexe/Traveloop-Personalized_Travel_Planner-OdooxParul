@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const adminController = require('../controllers/adminController');
+const ac = require('../controllers/adminController');
 const { verifyAdmin } = require('../middleware/auth');
 
-router.get('/analytics', verifyAdmin, adminController.getAnalytics);
+router.get('/stats',              verifyAdmin, ac.getAnalytics);
+router.get('/users',              verifyAdmin, ac.getUsers);
+router.delete('/users/:userId',   verifyAdmin, ac.deleteUser);
 
 module.exports = router;

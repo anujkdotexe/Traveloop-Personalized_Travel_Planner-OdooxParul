@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
+import CurrencyBadge from '../components/CurrencyBadge';
+import { useCurrency } from '../context/CurrencyContext';
 
 const PlusIcon = () => <svg className="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
 const MapPinIcon = () => <svg className="icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>;
@@ -34,13 +36,30 @@ const ACT_RESULTS = [
 ];
 const catClass = { sightseeing: 'tag-sightseeing', dining: 'tag-dining', adventure: 'tag-adventure', transport: 'tag-transport' };
 
+// Auto-detect local currency based on city name
+const CITY_CURRENCY = {
+  dubai: 'AED', paris: 'EUR', london: 'GBP', tokyo: 'JPY', rome: 'EUR',
+  barcelona: 'EUR', berlin: 'EUR', amsterdam: 'EUR', bangkok: 'THB',
+  singapore: 'SGD', sydney: 'AUD', toronto: 'CAD', zurich: 'CHF',
+  kuala_lumpur: 'MYR', bali: 'IDR',
+};
+function detectCurrency(cityName) {
+  const key = cityName?.toLowerCase().replace(/[^a-z]/g, '_');
+  return CITY_CURRENCY[key] || 'USD';
+}
+
 export default function ItineraryBuilder() {
+  const { id } = useParams();
   const [activeStop, setActiveStop] = useState(1);
   const [searchModal, setSearchModal] = useState(null);
   const [cityQ, setCityQ] = useState('');
   const [actQ, setActQ] = useState('');
+  const { formatDual, ratesLoaded, lastUpdated } = useCurrency();
   const acts = ACTIVITIES[activeStop] || [];
   const days = [...new Set(acts.map(a => a.day))];
+  const activeStopData = STOPS.find(s => s.id === activeStop);
+  // Currency for the active stop's country
+  const stopCurrency = detectCurrency(activeStopData?.city);
 
   return (
     <>
@@ -52,7 +71,13 @@ export default function ItineraryBuilder() {
             <div><h4 style={{ fontSize: '1rem', margin: 0 }}>Summer in Europe</h4><p style={{ fontSize: '0.78rem' }}>12 Jun - 25 Jun 2024</p></div>
           </div>
           <div className="flex gap-sm">
-            <Link to="/budget/1" className="btn btn-outline btn-sm">Budget Summary</Link>
+            {ratesLoaded && (
+              <span style={{ fontSize: '0.75rem', color: 'var(--secondary)', fontWeight: 600, alignSelf: 'center', background: 'var(--secondary-light)', padding: '4px 10px', borderRadius: 'var(--radius-full)', whiteSpace: 'nowrap' }}>
+                Live rates: {stopCurrency} → INR  |  Updated: {lastUpdated}
+              </span>
+            )}
+            <Link to={`/budget/${id || 1}`} className="btn btn-outline btn-sm">Budget Summary</Link>
+            <Link to={`/itinerary-view/${id || 1}`} className="btn btn-outline btn-sm">View Itinerary</Link>
             <Link to="/shared/1" className="btn btn-primary btn-sm"><ShareIcon /> Share Trip</Link>
           </div>
         </div>
@@ -75,9 +100,12 @@ export default function ItineraryBuilder() {
               </div>
             </button>
           ))}
-          <button onClick={() => setSearchModal('city')} style={{ width: '100%', border: '2px dashed var(--border)', borderRadius: 'var(--radius-md)', padding: '0.9rem', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <PlusIcon /> Add Another Stop
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <button onClick={() => setSearchModal('city')} style={{ width: '100%', border: '2px dashed var(--border)', borderRadius: 'var(--radius-md)', padding: '0.75rem', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <PlusIcon /> Quick Add Stop
+            </button>
+            <Link to={`/city-search?tripId=${id}`} className="btn btn-outline w-full" style={{ justifyContent: 'center', fontSize: '0.83rem' }}>Browse City Catalog</Link>
+          </div>
         </aside>
 
         <main style={{ padding: 'var(--space-xl)', overflowY: 'auto', background: 'var(--bg-page)' }}>
@@ -98,8 +126,8 @@ export default function ItineraryBuilder() {
                     <div style={{ fontWeight: 600, marginBottom: 4 }}>{act.name}</div>
                     <span className={`tag ${catClass[act.category] || ''}`}>{act.category}</span>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 700 }}>${act.cost}</div>
+                  <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                    <CurrencyBadge amount={act.cost} currency={stopCurrency} size="md" />
                     <button className="btn btn-ghost btn-icon-sm"><MoreIcon /></button>
                   </div>
                 </div>
@@ -116,7 +144,7 @@ export default function ItineraryBuilder() {
         </main>
       </div>
 
-      <Modal isOpen={searchModal === 'city'} onClose={() => setSearchModal(null)} title="Search City" maxWidth="600px">
+      <Modal isOpen={searchModal === 'city'} onClose={() => setSearchModal(null)} title="Quick Add City" maxWidth="600px">
         <div className="input-icon-wrap" style={{ marginBottom: '1.25rem' }}>
           <span className="input-icon"><SearchIcon /></span>
           <input className="input-field" placeholder="Search for cities..." value={cityQ} onChange={e => setCityQ(e.target.value)} />
@@ -133,9 +161,12 @@ export default function ItineraryBuilder() {
             <button className="btn btn-primary btn-sm" onClick={() => setSearchModal(null)}>Add to Trip</button>
           </div>
         ))}
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '1rem', textAlign: 'center' }}>
+          <Link to={`/city-search?tripId=${id}`} className="btn btn-outline w-full" onClick={() => setSearchModal(null)}>View Full City Catalog &rarr;</Link>
+        </div>
       </Modal>
 
-      <Modal isOpen={searchModal === 'activity'} onClose={() => setSearchModal(null)} title="Search Activity" maxWidth="600px">
+      <Modal isOpen={searchModal === 'activity'} onClose={() => setSearchModal(null)} title="Quick Add Activity" maxWidth="600px">
         <div className="toolbar" style={{ marginBottom: '1.25rem' }}>
           <div className="input-icon-wrap" style={{ flex: 1 }}>
             <span className="input-icon"><SearchIcon /></span>
@@ -150,12 +181,17 @@ export default function ItineraryBuilder() {
               <div className="flex gap-sm">
                 <span className={`tag ${catClass[act.category] || ''}`}>{act.category}</span>
                 <span className="tag">{act.duration}</span>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>${act.cost}</span>
               </div>
             </div>
-            <button className="btn btn-primary btn-sm" onClick={() => setSearchModal(null)}>Add</button>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+              <CurrencyBadge amount={act.cost} currency={stopCurrency} size="sm" />
+              <button className="btn btn-primary btn-sm" onClick={() => setSearchModal(null)}>Add</button>
+            </div>
           </div>
         ))}
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '1rem', textAlign: 'center' }}>
+          <Link to={`/activity-search?tripId=${id}`} className="btn btn-outline w-full" onClick={() => setSearchModal(null)}>Browse Full Activity Catalog &rarr;</Link>
+        </div>
       </Modal>
     </>
   );

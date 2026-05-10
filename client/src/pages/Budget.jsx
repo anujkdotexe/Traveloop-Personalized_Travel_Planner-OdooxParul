@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Chart from 'chart.js/auto';
 
@@ -21,6 +21,7 @@ const budget = 3000;
 const COLORS = ['#6366f1', '#14b8a6', '#f43f5e', '#f59e0b', '#8b5cf6'];
 
 export default function Budget() {
+  const { id } = useParams();
   const doughnutRef = useRef(null);
   const barRef = useRef(null);
 
@@ -47,7 +48,7 @@ export default function Budget() {
         <div className="flex items-center gap-md" style={{ marginBottom: 'var(--space-lg)' }}>
           <Link to="/trips" className="btn btn-ghost btn-icon"><ChevronLeftIcon /></Link>
           <div><h1>Budget Insights</h1><p>Summer in Europe &mdash; Cost Breakdown</p></div>
-          <div style={{ marginLeft: 'auto' }}><button className="btn btn-outline"><DownloadIcon /> Export Invoice</button></div>
+          <div style={{ marginLeft: 'auto' }}><Link to={`/invoice/${id || '1'}`} className="btn btn-outline"><DownloadIcon /> View Invoice</Link></div>
         </div>
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '1.5rem', marginBottom: 'var(--space-xl)' }}>
           {[

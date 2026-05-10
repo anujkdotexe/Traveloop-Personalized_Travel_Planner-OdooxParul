@@ -1,19 +1,36 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { useAuth } from '../context/AuthContext';
 import { useToast, ToastContainer } from '../components/Toast';
 
 const CameraIcon = () => <svg className="icon icon-sm" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>;
 const ShieldIcon = () => <svg className="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
 const HeartIcon = () => <svg className="icon icon-sm" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>;
 const TrashIcon = () => <svg className="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
+const CalIcon = () => <svg className="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+const PinIcon = () => <svg className="icon icon-sm" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>;
+const EyeIcon = () => <svg className="icon icon-sm" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
 
 export default function Profile() {
-  const [form, setForm] = useState({ name: 'Anuj Kondawar', email: 'anuj@example.com', bio: 'Exploring the world one itinerary at a time.', language: 'English' });
+  const { user } = useAuth();
+  const [form, setForm] = useState({ name: user?.name || 'Anuj Kondawar', email: user?.email || 'anuj@example.com', bio: 'Exploring the world one itinerary at a time.', language: 'English' });
   const [errors, setErrors] = useState({});
   const { toasts, showToast, dismissToast } = useToast();
   const set = (f) => (e) => setForm(p => ({ ...p, [f]: e.target.value }));
   const savedDests = ['Tokyo, Japan', 'Rome, Italy', 'New York, USA'];
   const handleSave = (e) => { e.preventDefault(); const errs = {}; if (!form.name.trim()) errs.name = 'Name is required.'; if (!form.email.trim()) errs.email = 'Email is required.'; if (Object.keys(errs).length) { setErrors(errs); return; } showToast('Profile updated successfully.', 'success'); };
+
+  const PREPLANNED = [
+    { id: 101, title: 'Greek Islands', dates: 'Aug 10 – Aug 22', stops: 3, color: '#6366f1' },
+    { id: 102, title: 'Morocco Adventure', dates: 'Sep 5 – Sep 14', stops: 4, color: '#14b8a6' },
+    { id: 103, title: 'Swiss Alps Trek', dates: 'Oct 1 – Oct 8', stops: 2, color: '#8b5cf6' },
+  ];
+  const PREVIOUS = [
+    { id: 201, title: 'Summer in Europe', dates: 'Jun 12 – Jun 25', stops: 2, color: '#f43f5e' },
+    { id: 202, title: 'Thailand & Bali', dates: 'Mar 3 – Mar 17', stops: 3, color: '#f59e0b' },
+    { id: 203, title: 'New York City', dates: 'Jan 8 – Jan 12', stops: 1, color: '#10b981' },
+  ];
 
   return (
     <>
@@ -92,6 +109,58 @@ export default function Profile() {
             </div>
           </div>
         </div>
+
+        {/* ── Preplanned Trips (wireframe Screen 7) ─── */}
+        <section style={{ marginTop: 'var(--space-xl)' }}>
+          <div className="flex justify-between items-center mb-md">
+            <h3>Preplanned Trips</h3>
+            <Link to="/trips" style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem' }}>View All</Link>
+          </div>
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: '1.25rem' }}>
+            {PREPLANNED.map(trip => (
+              <div key={trip.id} className="card card-hover" style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ height: 100, background: `linear-gradient(135deg,${trip.color},${trip.color}aa)`, display: 'flex', alignItems: 'center', padding: '1.25rem' }}>
+                  <div>
+                    <h4 style={{ color: '#fff', marginBottom: 4 }}>{trip.title}</h4>
+                    <div className="flex items-center gap-sm" style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.78rem' }}>
+                      <CalIcon />{trip.dates}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ padding: '0.9rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="flex items-center gap-xs" style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}><PinIcon />{trip.stops} stops</span>
+                  <Link to={`/itinerary/${trip.id}`} className="btn btn-primary btn-sm"><EyeIcon /> View</Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Previous Trips (wireframe Screen 7) ─── */}
+        <section style={{ marginTop: 'var(--space-xl)', marginBottom: 'var(--space-xl)' }}>
+          <div className="flex justify-between items-center mb-md">
+            <h3>Previous Trips</h3>
+            <Link to="/trips" style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem' }}>View All</Link>
+          </div>
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: '1.25rem' }}>
+            {PREVIOUS.map(trip => (
+              <div key={trip.id} className="card card-hover" style={{ padding: 0, overflow: 'hidden', opacity: 0.9 }}>
+                <div style={{ height: 100, background: `linear-gradient(135deg,${trip.color}88,${trip.color}44)`, display: 'flex', alignItems: 'center', padding: '1.25rem', borderBottom: '1px solid var(--border)' }}>
+                  <div>
+                    <h4 style={{ marginBottom: 4 }}>{trip.title}</h4>
+                    <div className="flex items-center gap-sm" style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                      <CalIcon />{trip.dates}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ padding: '0.9rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="flex items-center gap-xs" style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}><PinIcon />{trip.stops} stops</span>
+                  <Link to={`/itinerary-view/${trip.id}`} className="btn btn-outline btn-sm"><EyeIcon /> View</Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </>

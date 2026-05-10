@@ -53,3 +53,20 @@ coverage/
 # ── Misc ──────────────────────────────────────
 *.tgz
 *.zip
+
+# ── Deployment ─────────────────────────────────────────────
+# PM2 logs (these go to /var/log/traveloop/ on the server)
+.pm2/
+pids/
+*.pid
+
+# Docker volumes
+postgres-data/
+pgdata/
+
+# Production env overrides
+.env.production
+.env.staging
+
+# Build artifacts from CI/CD
+deploy/
