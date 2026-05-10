@@ -107,8 +107,8 @@ async function seed() {
           for (let a = 0; a < 3; a++) {
             const temp = ACTIVITY_TEMPLATES[Math.floor(Math.random() * ACTIVITY_TEMPLATES.length)];
             await db.query(
-              'INSERT INTO activities (stop_id, activity_name, cost_estimate, duration_minutes, category, scheduled_time) VALUES ($1, $2, $3, $4, $5, $6)',
-              [stopId, temp.name + ' ' + (a + 1), temp.cost, temp.duration, temp.category, `${9 + a * 3}:00:00`]
+              'INSERT INTO activities (stop_id, activity_name, cost_estimate, duration_minutes, category, scheduled_time, sequence_order) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+              [stopId, temp.name + ' ' + (a + 1), temp.cost, temp.duration, temp.category, `${9 + a * 3}:00:00`, a + 1]
             );
 
             // Create matching expense for some

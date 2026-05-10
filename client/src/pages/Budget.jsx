@@ -91,6 +91,7 @@ export default function Budget() {
   const breakdown = data?.breakdown || [];
   const expenses = data?.expenses || [];
   const activityCost = Number(data?.activity_cost || 0);
+  const budgetDelta = over ? total - budgetLimit : budgetLimit - total;
 
   if (loading) return <div className="loading-center">Loading Budget...</div>;
 
@@ -122,7 +123,7 @@ export default function Budget() {
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '1.5rem', marginBottom: 'var(--space-xl)' }}>
           {[
             { label: 'Total Actual', value: format(total), icon: WalletIcon, color: 'var(--primary)' },
-            { label: 'Budget Status', value: over ? `${format(total-budgetLimit)} Over` : `${format(budgetLimit-total)} Under`, icon: AlertIcon, color: over ? 'var(--accent)' : 'var(--success)' },
+            { label: 'Budget Status', value: over ? `Over budget by ${format(budgetDelta)}` : `Under budget by ${format(budgetDelta)}`, icon: AlertIcon, color: over ? 'var(--accent)' : 'var(--success)' },
             { label: 'Planned Estimate', value: format(activityCost), icon: TrendIcon, color: 'var(--secondary)' },
           ].map(k => (
             <div key={k.label} className="card" style={{ borderLeft: `4px solid ${k.color}` }}>
@@ -130,6 +131,7 @@ export default function Budget() {
                 <k.icon /><span className="input-label" style={{ margin: 0 }}>{k.label}</span>
               </div>
               <h2 style={{ color: k.color }}>{k.value}</h2>
+              {k.label === 'Budget Status' && <p style={{ marginTop: 6, fontSize: '0.82rem', color: 'var(--text-muted)' }}>Budget cap: {format(budgetLimit)}</p>}
             </div>
           ))}
         </div>

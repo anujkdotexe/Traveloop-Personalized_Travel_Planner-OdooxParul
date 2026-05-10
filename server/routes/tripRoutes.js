@@ -26,6 +26,8 @@ router.delete('/:id',     verifyUser, tc.deleteTrip);
 router.post('/stop',      verifyUser, tc.addStop);
 router.post('/activity',  verifyUser, tc.addActivity);
 router.delete('/activity/:activityId', verifyUser, tc.deleteActivity);
+router.patch('/activity/reorder', verifyUser, tc.reorderActivity);
+router.patch('/activity/:activityId/reorder', verifyUser, tc.reorderActivity);
 
 // ─── Budget ──────────────────────────────────────────────────────────────────
 router.get('/:id/budget', verifyUser, tc.getTripBudget);

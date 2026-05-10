@@ -52,7 +52,7 @@ exports.getTripById = async (req, res) => {
       `SELECT a.* FROM activities a
        JOIN stops s ON a.stop_id = s.id
        WHERE s.trip_id = $1
-       ORDER BY a.scheduled_time`,
+       ORDER BY a.sequence_order NULLS LAST, a.scheduled_time NULLS LAST, a.created_at`,
       [id]
     );
 
@@ -189,15 +189,83 @@ exports.addActivity = async (req, res) => {
     return res.status(400).json({ message: 'Stop ID and activity name are required.' });
 
   try {
+    const orderResult = await db.query('SELECT COALESCE(MAX(sequence_order), 0) + 1 AS next_order FROM activities WHERE stop_id = $1', [stop_id]);
     const result = await db.query(
-      `INSERT INTO activities (stop_id, activity_name, cost_estimate, duration_minutes, category, scheduled_time)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO activities (stop_id, activity_name, cost_estimate, duration_minutes, category, scheduled_time, sequence_order)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [stop_id, activity_name, cost_estimate || 0, duration_minutes || null, category || null, scheduled_time || null]
+      [stop_id, activity_name, cost_estimate || 0, duration_minutes || null, category || null, scheduled_time || null, orderResult.rows[0].next_order]
     );
     res.status(201).json({ status: 'success', data: result.rows[0] });
   } catch (err) {
     res.status(500).json({ status: 'error', message: 'Failed to add activity.' });
+  }
+};
+
+exports.reorderActivity = async (req, res) => {
+  const activityId = req.params.activityId || req.body.activityId;
+  const { targetActivityId, direction } = req.body;
+
+  if (!targetActivityId && !direction) {
+    return res.status(400).json({ status: 'error', message: 'Target activity or direction is required.' });
+  }
+
+  try {
+    const current = await db.query(
+      `SELECT a.id, a.sequence_order, s.id AS stop_id
+       FROM activities a
+       JOIN stops s ON a.stop_id = s.id
+       JOIN trips t ON s.trip_id = t.id
+       WHERE a.id = $1 AND t.user_id = $2`,
+      [activityId, req.user.id]
+    );
+
+    if (current.rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'Activity not found.' });
+    }
+
+    const stopId = current.rows[0].stop_id;
+
+    let target = null;
+    if (targetActivityId) {
+      const targetResult = await db.query(
+        `SELECT a.id, a.sequence_order
+         FROM activities a
+         JOIN stops s ON a.stop_id = s.id
+         JOIN trips t ON s.trip_id = t.id
+         WHERE a.id = $1 AND s.id = $2 AND t.user_id = $3`,
+        [targetActivityId, stopId, req.user.id]
+      );
+      target = targetResult.rows[0];
+    } else {
+      const ordered = await db.query(
+        `SELECT id, sequence_order
+         FROM activities
+         WHERE stop_id = $1
+         ORDER BY sequence_order NULLS LAST, created_at`,
+        [stopId]
+      );
+      const idx = ordered.rows.findIndex(row => row.id === activityId);
+      const nextIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (idx === -1 || nextIdx < 0 || nextIdx >= ordered.rows.length) {
+        return res.status(400).json({ status: 'error', message: 'Cannot move activity.' });
+      }
+      target = ordered.rows[nextIdx];
+    }
+
+    if (!target) {
+      return res.status(404).json({ status: 'error', message: 'Target activity not found.' });
+    }
+
+    const currentOrder = current.rows[0].sequence_order || 0;
+    const targetOrder = target.sequence_order || 0;
+
+    await db.query('UPDATE activities SET sequence_order = $1 WHERE id = $2', [targetOrder, activityId]);
+    await db.query('UPDATE activities SET sequence_order = $1 WHERE id = $2', [currentOrder, target.id]);
+
+    res.json({ status: 'success', message: 'Activity reordered.' });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: 'Failed to reorder activity.' });
   }
 };
 
@@ -466,9 +534,9 @@ exports.copyTrip = async (req, res) => {
       const activities = await db.query('SELECT * FROM activities WHERE stop_id = $1', [stop.id]);
       for (const act of activities.rows) {
         await db.query(
-          `INSERT INTO activities (stop_id, activity_name, category, cost_estimate, scheduled_time)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [newStopId, act.activity_name, act.category, act.cost_estimate, act.scheduled_time]
+          `INSERT INTO activities (stop_id, activity_name, category, cost_estimate, scheduled_time, sequence_order)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [newStopId, act.activity_name, act.category, act.cost_estimate, act.scheduled_time, act.sequence_order]
         );
       }
     }

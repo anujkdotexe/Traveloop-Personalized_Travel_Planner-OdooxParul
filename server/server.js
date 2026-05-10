@@ -9,6 +9,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const db = require('./db/db');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -65,7 +66,13 @@ app.use((err, req, res, next) => {  // eslint-disable-line no-unused-vars
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`Traveloop API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
-  console.log(`Health: http://localhost:${PORT}/api/health`);
+(async () => {
+  await db.ensureSchema();
+  app.listen(PORT, () => {
+    console.log(`Traveloop API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+    console.log(`Health: http://localhost:${PORT}/api/health`);
+  });
+})().catch((err) => {
+  console.error('[Startup error]', err.message);
+  process.exit(1);
 });

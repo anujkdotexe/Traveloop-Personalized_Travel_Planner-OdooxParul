@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS activities (
     duration_minutes INTEGER,
     category VARCHAR(50),
     scheduled_time TIME,
+    sequence_order INTEGER,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -103,6 +104,7 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_trips_user_id ON trips(user_id);
 CREATE INDEX IF NOT EXISTS idx_stops_trip_id ON stops(trip_id);
 CREATE INDEX IF NOT EXISTS idx_activities_stop_id ON activities(stop_id);
+CREATE INDEX IF NOT EXISTS idx_activities_sequence_order ON activities(stop_id, sequence_order);
 CREATE INDEX IF NOT EXISTS idx_expenses_trip_id ON expenses(trip_id);
 CREATE INDEX IF NOT EXISTS idx_checklists_trip_id ON checklists(trip_id);
 CREATE INDEX IF NOT EXISTS idx_saved_destinations_user_id ON saved_destinations(user_id);

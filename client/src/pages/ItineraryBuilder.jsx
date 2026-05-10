@@ -42,6 +42,7 @@ export default function ItineraryBuilder() {
   const [searchModal, setSearchModal] = useState(null);
   const [cityQ, setCityQ] = useState('');
   const [actQ, setActQ] = useState('');
+  const [draggingActivityId, setDraggingActivityId] = useState(null);
 
   const fetchTrip = async () => {
     try {
@@ -161,6 +162,24 @@ export default function ItineraryBuilder() {
     }
   };
 
+  const reorderActivity = async (activityId, targetActivityId) => {
+    try {
+      const res = await fetch('/api/trips/activity/reorder', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ activityId, targetActivityId })
+      });
+      if (res.ok) {
+        fetchTrip();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.message || 'Failed to reorder activity.', 'error');
+      }
+    } catch (err) {
+      showToast('Failed to reorder activity.', 'error');
+    }
+  };
+
   if (loading) return <div className="loading-center">Loading...</div>;
 
   return (
@@ -219,8 +238,30 @@ export default function ItineraryBuilder() {
           
           <div style={{ marginBottom: 'var(--space-lg)' }}>
             {activities.length > 0 ? activities.map(act => (
-              <div key={act.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1rem 1.25rem', marginBottom: '0.75rem', borderRadius: 'var(--radius-md)' }}>
-                <GripIcon />
+              <div
+                key={act.id}
+                className="card"
+                draggable
+                onDragStart={() => setDraggingActivityId(act.id)}
+                onDragOver={e => e.preventDefault()}
+                onDrop={() => {
+                  if (draggingActivityId && draggingActivityId !== act.id) {
+                    reorderActivity(draggingActivityId, act.id);
+                  }
+                  setDraggingActivityId(null);
+                }}
+                onDragEnd={() => setDraggingActivityId(null)}
+                style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1rem 1.25rem', marginBottom: '0.75rem', borderRadius: 'var(--radius-md)', cursor: 'grab', opacity: draggingActivityId === act.id ? 0.65 : 1 }}
+              >
+                <button
+                  type="button"
+                  aria-label="Drag to reorder activity"
+                  onMouseDown={() => setDraggingActivityId(act.id)}
+                  className="btn btn-ghost btn-icon-sm"
+                  style={{ cursor: 'grab' }}
+                >
+                  <GripIcon />
+                </button>
                 <div style={{ minWidth: 90, fontWeight: 700, color: 'var(--primary)', fontSize: '0.85rem' }}>{act.scheduled_time?.slice(0, 5)}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, marginBottom: 4 }}>{act.activity_name}</div>
