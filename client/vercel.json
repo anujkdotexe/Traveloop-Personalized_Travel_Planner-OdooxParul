@@ -1,8 +1,12 @@
 {
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://traveloop-personalized-travel-planner.onrender.com/api/$1"
+      "source": "/api/:path*",
+      "destination": "https://odooxparul-backend.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }

@@ -20,10 +20,12 @@ app.use(express.urlencoded({ extended: true }));
 const authRoutes  = require('./routes/authRoutes');
 const tripRoutes  = require('./routes/tripRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 app.use('/api/auth',  authRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // ── Health Check (used by deployment platforms & PM2) ─────────────────────────
 app.get('/api/health', (req, res) => {

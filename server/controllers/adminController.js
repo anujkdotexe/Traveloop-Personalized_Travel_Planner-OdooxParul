@@ -13,7 +13,20 @@ exports.getAnalytics = async (req, res) => {
          FROM stops
          GROUP BY city_name, country
          ORDER BY trip_count DESC
-         LIMIT 10`
+         LIMIT 5`
+      ),
+      db.query(
+        `SELECT category, COUNT(*) as count 
+         FROM activities 
+         GROUP BY category 
+         ORDER BY count DESC`
+      ),
+      db.query(
+        `SELECT TO_CHAR(created_at, 'Mon') as month, COUNT(*) as count
+         FROM users
+         WHERE created_at > NOW() - INTERVAL '6 months'
+         GROUP BY month, TO_CHAR(created_at, 'MM')
+         ORDER BY TO_CHAR(created_at, 'MM')`
       ),
     ]);
 
@@ -25,6 +38,8 @@ exports.getAnalytics = async (req, res) => {
         public_trips: parseInt(publicTrips.rows[0].count),
         total_activities: parseInt(activities.rows[0].count),
         top_cities: topCities.rows,
+        categories: categories.rows,
+        user_growth: userGrowth.rows,
       },
     });
   } catch (err) {

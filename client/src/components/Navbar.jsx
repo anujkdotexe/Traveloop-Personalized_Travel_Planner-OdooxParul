@@ -138,13 +138,43 @@ function AccountDropdown({ user, isAdmin, onLogout }) {
 /* ── Notification bell with badge ───────────────────────────────────────────── */
 function NotificationBell() {
   const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const ref = useRef(null);
-  const NOTIFS = [
-    { title: 'Trip reminder', msg: 'Your Paris trip starts in 3 days!', time: '2h ago', unread: true },
-    { title: 'Community', msg: 'Someone copied your Japan itinerary.', time: '1d ago', unread: true },
-    { title: 'Budget alert', msg: 'You are nearing your budget limit.', time: '2d ago', unread: false },
-  ];
-  const unreadCount = NOTIFS.filter(n => n.unread).length;
+  const { token } = useAuth();
+
+  const fetchNotifs = async () => {
+    try {
+      const res = await fetch('/api/notifications', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) setNotifications(data);
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (token) fetchNotifs();
+    // Refresh every 2 mins
+    const interval = setInterval(() => { if (token) fetchNotifs(); }, 120000);
+    return () => clearInterval(interval);
+  }, [token]);
+
+  const markAllRead = async () => {
+    try {
+      await fetch('/api/notifications/read-all', {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      fetchNotifs();
+    } catch (err) {
+      console.error('Failed to mark all read:', err);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener('mousedown', handler);
@@ -163,17 +193,21 @@ function NotificationBell() {
         <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 10px)', width: 300, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: '0 20px 40px -8px rgba(0,0,0,0.12)', zIndex: 1000, overflow: 'hidden', animation: 'dropdownIn 0.18s ease' }}>
           <div style={{ padding: '0.9rem 1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontWeight: 700 }}>Notifications</span>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)', cursor: 'pointer' }}>Mark all read</span>
+            <span onClick={markAllRead} style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)', cursor: 'pointer' }}>Mark all read</span>
           </div>
-          {NOTIFS.map((n, i) => (
-            <div key={i} style={{ padding: '0.9rem 1.25rem', borderBottom: i < NOTIFS.length - 1 ? '1px solid var(--border)' : 'none', background: n.unread ? 'var(--primary-light)' : 'transparent', cursor: 'pointer', transition: 'background 0.15s' }}
+          {notifications.length === 0 ? (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>No notifications yet</div>
+          ) : notifications.map((n, i) => (
+            <div key={n.id || i} style={{ padding: '0.9rem 1.25rem', borderBottom: i < notifications.length - 1 ? '1px solid var(--border)' : 'none', background: !n.is_read ? 'var(--primary-light)' : 'transparent', cursor: 'pointer', transition: 'background 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-surface-alt)'}
-              onMouseLeave={e => e.currentTarget.style.background = n.unread ? 'var(--primary-light)' : 'transparent'}>
+              onMouseLeave={e => e.currentTarget.style.background = !n.is_read ? 'var(--primary-light)' : 'transparent'}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ fontWeight: n.unread ? 700 : 500, fontSize: '0.85rem', flex: 1 }}>{n.title}</div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginLeft: 8 }}>{n.time}</span>
+                <div style={{ fontWeight: !n.is_read ? 700 : 500, fontSize: '0.85rem', flex: 1 }}>{n.title}</div>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginLeft: 8 }}>
+                  {new Date(n.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                </span>
               </div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2 }}>{n.msg}</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2 }}>{n.message}</div>
             </div>
           ))}
           <div style={{ padding: '0.75rem 1.25rem', textAlign: 'center', borderTop: '1px solid var(--border)' }}>

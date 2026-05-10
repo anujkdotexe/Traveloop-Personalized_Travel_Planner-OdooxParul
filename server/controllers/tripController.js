@@ -285,3 +285,28 @@ exports.getPublicTrips = async (req, res) => {
     res.status(500).json({ status: 'error', message: 'Failed to get community trips.' });
   }
 };
+
+// ─── Top Destinations (Calculated from popular stops) ──────────────────────
+exports.getTopDestinations = async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT city_name as name, country, COUNT(*) as count 
+      FROM stops 
+      GROUP BY city_name, country 
+      ORDER BY count DESC 
+      LIMIT 4
+    `);
+    
+    // Enrich with Unsplash images
+    const destinations = result.rows.map(d => ({
+      name: d.name + ', ' + d.country,
+      img: `https://source.unsplash.com/featured/400x300?${encodeURIComponent(d.name)}`,
+      desc: `${d.count} trips planned here`
+    }));
+
+    res.json({ status: 'success', data: destinations });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+

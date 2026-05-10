@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Navbar from '../components/Navbar';
 import Chart from 'chart.js/auto';
+import { useAuth } from '../context/AuthContext';
 
 const UsersIcon = () => <svg className="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
 const MapIcon = () => <svg className="icon" viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>;
@@ -16,86 +17,167 @@ const KPI = ({ label, value, delta, icon: Icon, color }) => (
     {delta && <p style={{ fontSize: '0.82rem', color: 'var(--success)', fontWeight: 700, marginTop: 4 }}>{delta}</p>}
   </div>
 );
-const topCities = [
-  { name: 'Paris, France', count: 842 },
-  { name: 'Tokyo, Japan', count: 715 },
-  { name: 'Rome, Italy', count: 642 },
-  { name: 'Bangkok, Thailand', count: 524 },
-  { name: 'Barcelona, Spain', count: 488 },
-];
-const users = [
-  { name: 'Priya Sharma', email: 'priya@example.com', trips: 8, joined: 'Jan 2024' },
-  { name: 'Marco Rossi', email: 'marco@example.com', trips: 5, joined: 'Feb 2024' },
-  { name: 'Yuki Tanaka', email: 'yuki@example.com', trips: 12, joined: 'Mar 2024' },
-];
 
 export default function Admin() {
+  const { token } = useAuth();
   const lineRef = useRef(null);
   const pieRef = useRef(null);
+  const lineChart = useRef(null);
+  const pieChart = useRef(null);
+  
+  const [stats, setStats] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = async () => {
+    try {
+      const [sRes, uRes] = await Promise.all([
+        fetch('/api/admin/stats', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } })
+      ]);
+      const sData = await sRes.json();
+      const uData = await uRes.json();
+      
+      if (sData.status === 'success') setStats(sData.data);
+      if (uData.status === 'success') setUsers(uData.data);
+    } catch (err) {
+      console.error('Failed to fetch admin data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const line = new Chart(lineRef.current, {
+    fetchData();
+  }, [token]);
+
+  useEffect(() => {
+    if (!stats || !lineRef.current || !pieRef.current) return;
+
+    if (lineChart.current) lineChart.current.destroy();
+    if (pieChart.current) pieChart.current.destroy();
+
+    lineChart.current = new Chart(lineRef.current, {
       type: 'line',
-      data: { labels: ['Jan','Feb','Mar','Apr','May','Jun'], datasets: [{ label: 'New Users', data: [1200,1900,3000,3500,4800,5200], borderColor: '#6366F1', backgroundColor: 'rgba(99,102,241,0.06)', tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#fff', pointBorderColor: '#6366F1', pointBorderWidth: 2 }] },
+      data: { 
+        labels: stats.user_growth.map(g => g.month), 
+        datasets: [{ 
+          label: 'New Users', 
+          data: stats.user_growth.map(g => g.count), 
+          borderColor: '#6366F1', 
+          backgroundColor: 'rgba(99,102,241,0.06)', 
+          tension: 0.4, 
+          fill: true, 
+          pointRadius: 5, 
+          pointBackgroundColor: '#fff', 
+          pointBorderColor: '#6366F1', 
+          pointBorderWidth: 2 
+        }] 
+      },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { borderDash: [4,4] } } } },
     });
-    const pie = new Chart(pieRef.current, {
+
+    pieChart.current = new Chart(pieRef.current, {
       type: 'doughnut',
-      data: { labels: ['Sightseeing','Dining','Adventure','Transport'], datasets: [{ data: [40,30,20,10], backgroundColor: ['#6366f1','#14b8a6','#f43f5e','#f59e0b'], borderWidth: 0, hoverOffset: 10 }] },
+      data: { 
+        labels: stats.categories.map(c => c.category || 'Other'), 
+        datasets: [{ 
+          data: stats.categories.map(c => c.count), 
+          backgroundColor: ['#6366f1','#14b8a6','#f43f5e','#f59e0b','#8b5cf6','#10b981'], 
+          borderWidth: 0, 
+          hoverOffset: 10 
+        }] 
+      },
       options: { plugins: { legend: { position: 'bottom' } }, cutout: '65%', responsive: true },
     });
-    return () => { line.destroy(); pie.destroy(); };
-  }, []);
+
+    return () => {
+      if (lineChart.current) lineChart.current.destroy();
+      if (pieChart.current) pieChart.current.destroy();
+    };
+  }, [stats]);
+
+  const deleteUser = async (id) => {
+    if (!window.confirm('Are you sure you want to remove this user?')) return;
+    try {
+      await fetch(`/api/admin/users/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      fetchData();
+    } catch (err) {
+      console.error('Failed to delete user:', err);
+    }
+  };
+
+  if (loading) return <div style={{ padding: '4rem', textAlign: 'center' }}>Loading dashboard...</div>;
 
   return (
     <>
       <Navbar />
       <div className="page-container">
-        <div className="mb-lg"><h1>Admin Dashboard</h1><p>Platform-wide analytics and user management tools.</p></div>
+        <div className="mb-lg">
+          <h1>Admin Dashboard</h1>
+          <p>Real-time platform analytics and user management.</p>
+        </div>
+
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '1.5rem', marginBottom: 'var(--space-xl)' }}>
-          <KPI label="Total Users" value="12,840" delta="+12% this week" icon={UsersIcon} color="var(--primary)" />
-          <KPI label="Active Trips" value="4,215" delta="+8% this week" icon={MapIcon} color="var(--secondary)" />
-          <KPI label="Shared Itineraries" value="1,052" delta="Stable" icon={TrendIcon} color="var(--accent)" />
-          <KPI label="Activities Logged" value="38,940" delta="+4% this week" icon={ActivityIcon} color="var(--warning)" />
+          <KPI label="Total Users" value={stats?.total_users.toLocaleString()} delta="+12% this month" icon={UsersIcon} color="var(--primary)" />
+          <KPI label="Active Trips" value={stats?.total_trips.toLocaleString()} delta="+8% this month" icon={MapIcon} color="var(--secondary)" />
+          <KPI label="Shared Itineraries" value={stats?.public_trips.toLocaleString()} delta="Community active" icon={TrendIcon} color="var(--accent)" />
+          <KPI label="Activities Logged" value={stats?.total_activities.toLocaleString()} delta="+4% total" icon={ActivityIcon} color="var(--warning)" />
         </div>
+
         <div className="grid" style={{ gridTemplateColumns: '1.5fr 1fr', gap: 'var(--space-lg)', marginBottom: 'var(--space-xl)' }}>
-          <div className="card"><h3 style={{ marginBottom: '1.5rem' }}>User Growth Trend</h3><div style={{ height: 300 }}><canvas ref={lineRef} /></div></div>
-          <div className="card"><h3 style={{ marginBottom: '1.5rem' }}>Activity Types</h3><div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><canvas ref={pieRef} /></div></div>
+          <div className="card">
+            <h3 style={{ marginBottom: '1.5rem' }}>User Growth Trend</h3>
+            <div style={{ height: 300 }}><canvas ref={lineRef} /></div>
+          </div>
+          <div className="card">
+            <h3 style={{ marginBottom: '1.5rem' }}>Activity Categories</h3>
+            <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><canvas ref={pieRef} /></div>
+          </div>
         </div>
+
         <div className="grid" style={{ gridTemplateColumns: '1fr 1.5fr', gap: 'var(--space-lg)' }}>
           <div className="card">
-            <h3 style={{ marginBottom: '1.5rem' }}>Popular Destinations</h3>
-            {topCities.map((city, i) => (
-              <div key={city.name} className="flex justify-between items-center" style={{ padding: '0.9rem 0', borderBottom: i < topCities.length-1 ? '1px solid var(--border)' : 'none' }}>
+            <h3 style={{ marginBottom: '1.5rem' }}>Top Destinations</h3>
+            {stats?.top_cities.map((city, i) => (
+              <div key={i} className="flex justify-between items-center" style={{ padding: '0.9rem 0', borderBottom: i < stats.top_cities.length-1 ? '1px solid var(--border)' : 'none' }}>
                 <div className="flex items-center gap-md">
                   <span style={{ width: 28, height: 28, background: 'var(--bg-surface-alt)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8rem', color: 'var(--text-muted)' }}>{String(i+1).padStart(2,'0')}</span>
-                  <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{city.name}</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{city.city_name}, {city.country}</span>
                 </div>
-                <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.9rem' }}>{city.count.toLocaleString()} trips</span>
+                <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.9rem' }}>{city.trip_count} trips</span>
               </div>
             ))}
           </div>
+          
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             <div className="flex justify-between items-center" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
               <h3>User Management</h3>
-              <span className="badge badge-upcoming">{users.length} shown</span>
+              <span className="badge badge-ongoing">{users.length} total</span>
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead style={{ background: 'var(--bg-surface-alt)' }}>
-                <tr>{['Name','Email','Trips','Joined','Action'].map(h => <th key={h} style={{ padding: '0.9rem 1.25rem', textAlign: 'left', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>{h}</th>)}</tr>
-              </thead>
-              <tbody>
-                {users.map(u => (
-                  <tr key={u.email} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '0.9rem 1.25rem', fontWeight: 600, fontSize: '0.88rem' }}>{u.name}</td>
-                    <td style={{ padding: '0.9rem 1.25rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>{u.email}</td>
-                    <td style={{ padding: '0.9rem 1.25rem', fontWeight: 700 }}>{u.trips}</td>
-                    <td style={{ padding: '0.9rem 1.25rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>{u.joined}</td>
-                    <td style={{ padding: '0.9rem 1.25rem' }}><button className="btn btn-danger btn-sm">Remove</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead style={{ background: 'var(--bg-surface-alt)' }}>
+                  <tr>{['Name','Email','Trips','Joined','Action'].map(h => <th key={h} style={{ padding: '0.9rem 1.25rem', textAlign: 'left', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>{h}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {users.map(u => (
+                    <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '0.9rem 1.25rem', fontWeight: 600, fontSize: '0.88rem' }}>{u.name}</td>
+                      <td style={{ padding: '0.9rem 1.25rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>{u.email}</td>
+                      <td style={{ padding: '0.9rem 1.25rem', fontWeight: 700 }}>{u.trip_count}</td>
+                      <td style={{ padding: '0.9rem 1.25rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>{new Date(u.created_at).toLocaleDateString()}</td>
+                      <td style={{ padding: '0.9rem 1.25rem' }}>
+                        <button onClick={() => deleteUser(u.id)} className="btn btn-danger btn-sm">Remove</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

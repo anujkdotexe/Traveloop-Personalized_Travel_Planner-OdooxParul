@@ -90,3 +90,16 @@ CREATE INDEX idx_stops_trip_id ON stops(trip_id);
 CREATE INDEX idx_activities_stop_id ON activities(stop_id);
 CREATE INDEX idx_expenses_trip_id ON expenses(trip_id);
 CREATE INDEX idx_checklists_trip_id ON checklists(trip_id);
+
+-- Notifications
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(20) DEFAULT 'general',
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);

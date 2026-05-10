@@ -11,12 +11,6 @@ const MapPinIcon = () => <svg className="icon icon-sm" viewBox="0 0 24 24"><path
 const CalendarIcon = () => <svg className="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
 const ArrowRightIcon = () => <svg className="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
 
-const DESTINATIONS = [
-  { name: 'Paris, France',   img: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=400&q=80', desc: 'City of Light' },
-  { name: 'Tokyo, Japan',    img: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=400&q=80', desc: 'Neon and Tradition' },
-  { name: 'Dubai, UAE',      img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=400&q=80', desc: 'Skyline and Desert' },
-  { name: 'Rome, Italy',     img: 'https://images.unsplash.com/photo-1552832230-c0197DD2a538?auto=format&fit=crop&w=400&q=80', desc: 'The Eternal City' },
-];
 
 function formatDate(d) {
   if (!d) return '';
@@ -41,13 +35,23 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { toasts, showToast, dismissToast } = useToast();
   // ── Load real trips from API ─────────────────────────────────────────────
+  const [destinations, setDestinations] = useState([]);
+
   useEffect(() => {
     if (!token) return;
+    
+    // Load trips
     fetch('/api/trips', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(d => { if (d.status === 'success') setTrips(d.data); })
       .catch(() => showToast('Could not load trips.', 'error'))
       .finally(() => setTripsLoading(false));
+
+    // Load top destinations
+    fetch('/api/trips/public/top-destinations')
+      .then(r => r.json())
+      .then(d => { if (d.status === 'success') setDestinations(d.data); })
+      .catch(err => console.error('Destinations load failed:', err));
   }, [token]);
 
   const setF = (f) => (e) => { setForm(prev => ({ ...prev, [f]: e.target.value })); setFormErrors(er => ({ ...er, [f]: '' })); };
@@ -190,7 +194,9 @@ export default function Dashboard() {
             <Link to="/community" className="flex items-center gap-xs" style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem' }}>Explore All <ArrowRightIcon /></Link>
           </div>
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: '1.25rem' }}>
-            {DESTINATIONS.map(d => (
+            {destinations.length === 0 ? (
+              [1,2,3,4].map(i => <div key={i} className="card" style={{ height: 180, background: 'var(--bg-surface-alt)', opacity: 0.5 }} />)
+            ) : destinations.map(d => (
               <Link to="/community" key={d.name} className="card card-hover" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{ height: 130, backgroundImage: `url(${d.img})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
                 <div style={{ padding: '0.9rem 1rem' }}>

@@ -27,7 +27,8 @@ router.get('/:id/notes',       verifyUser, tc.getNotes);
 router.post('/notes',          verifyUser, tc.addNote);
 router.delete('/notes/:noteId', verifyUser, tc.deleteNote);
 
-// ─── Community (public trips) ─────────────────────────────────────────────
+// ─── Community & Destinations ─────────────────────────────────────────────
 router.get('/public/community', tc.getPublicTrips);
+router.get('/public/top-destinations', tc.getTopDestinations);
 
 module.exports = router;
