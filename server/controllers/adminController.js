@@ -10,6 +10,7 @@ const db = require('../db/db');
 
 /**
  * @description Returns aggregated platform analytics used by the admin dashboard.
+ * Uses SQL aggregates so the API only returns summary data, not raw user/trip rows.
  * Provides total user and trip counts and the top 5 destinations by stop count.
  * @param {Object} req - Express request object (requires admin auth middleware)
  * @param {Object} res - Express response object
