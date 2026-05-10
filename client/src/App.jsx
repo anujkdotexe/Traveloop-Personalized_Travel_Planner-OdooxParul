@@ -26,8 +26,7 @@ import ExpenseInvoice from './pages/ExpenseInvoice';
 export default function App() {
   return (
     <AuthProvider>
-      <CurrencyProvider>
-        <BrowserRouter>
+      <BrowserRouter>
         <Routes>
           {/* ── Public ─────────────────────────────── */}
           <Route path="/" element={<Home />} />
@@ -57,8 +56,9 @@ export default function App() {
           {/* ── Fallback ────────────────────────────── */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
-        </BrowserRouter>
-      </CurrencyProvider>
+      </BrowserRouter>
     </AuthProvider>
+
+
   );
 }

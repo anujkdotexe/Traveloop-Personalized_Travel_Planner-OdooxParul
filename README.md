@@ -1,101 +1,58 @@
-# ✈️ Traveloop: Personalized AI-Powered Travel Planner
+# Traveloop — Personalized Travel Planner
 
-Traveloop is a premium, full-stack travel planning platform designed to transform complex trip logistics into a seamless, visual journey. Built for modern travelers and digital nomads.
+Traveloop is an all-in-one travel companion designed to simplify trip planning, budget management, and itinerary organization. From building multi-stop journeys to tracking every penny spent, Traveloop provides a premium, interactive experience for modern travelers.
 
-![Traveloop Hero](https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1200&q=80)
+## 🚀 Features
 
-## 🌟 Key Features
+- **Dynamic Itinerary Builder**: Plan multi-city trips with drag-and-drop ease.
+- **Financial Command Center**: Real-time budget tracking and automated invoice generation.
+- **Trip Journal**: Record memories and important notes for every destination.
+- **Smart Checklists**: Never forget an item with categorized packing lists.
+- **Community Feed**: Share your adventures and discover top destinations.
+- **Admin Dashboard**: Powerful analytics and platform management tools.
 
-### 🗺️ Intelligent Itinerary Builder
-- **Multi-Stop Planning**: Organize trips by cities and sequences.
-- **Granular Activities**: Schedule sightseeing, dining, and adventure with time and cost tracking.
-- **Dynamic Checklists**: Never forget your passport again with automated packing lists.
+## 🛠️ Technology Stack
 
-### 📊 Professional Admin Suite
-- **Real-time Analytics**: Monitor user growth, trip activity, and category distribution.
-- **KPI Tracking**: High-level metrics for platform health.
-- **User Management**: Administrative control over the platform's community.
+- **Frontend**: React, Chart.js, Vite
+- **Backend**: Node.js, Express, JWT
+- **Database**: PostgreSQL (UUID based schema)
+- **Deployment**: Vercel & Render
 
-### 🌍 Community & Discovery
-- **Public Feed**: Share your adventures or discover itineraries from fellow travelers.
-- **One-Click Copy**: Found a perfect Tokyo plan? Copy it to your account instantly.
-- **Live FX Conversion**: Planning a trip to Dubai? See costs in AED and INR (~₹) simultaneously with live exchange rates.
+## 📖 Documentation
 
-### 🔔 Smart Notifications
-- **Automated Alerts**: Receive instant feedback on trip creation, sharing, and system updates.
-- **Personalized Inbox**: User-specific notification history.
+Detailed technical documentation is available in the `/docs` directory:
 
----
+- [System Architecture](docs/ARCHITECTURE.md)
+- [API Reference](docs/API.md)
+- [Database Schema](docs/DATABASE.md)
 
-## 🛠️ Technical Stack
+## 🚦 Getting Started
 
-- **Frontend**: React 18, Vite, Chart.js, React Router v6.
-- **Backend**: Node.js, Express.js, JWT Auth, Bcrypt.
-- **Database**: PostgreSQL (Relational) with UUID primary keys.
-- **Deployment**: Vercel (Frontend) + Render (Backend/DB).
+### Prerequisites
+- Node.js (v18+)
+- PostgreSQL (v14+)
 
----
+### Installation
 
-## 📂 Documentation
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/anujkdotexe/Traveloop-Personalized_Travel_Planner-OdooxParul
+   ```
 
-Detailed technical documentation is available in the `docs/` directory:
+2. **Backend Setup**
+   ```bash
+   cd server
+   npm install
+   # Create .env based on .env.example
+   npm start
+   ```
 
-1.  **[Architecture](docs/ARCHITECTURE.md)**: System design and technology stack.
-2.  **[Database Schema](docs/DATABASE.md)**: Tables, ERD, and relationships.
-3.  **[API Reference](docs/API.md)**: Complete REST endpoint documentation.
-4.  **[Deployment Guide](DEPLOYMENT.md)**: Instructions for production setup.
+3. **Frontend Setup**
+   ```bash
+   cd client
+   npm install
+   npm run dev
+   ```
 
----
-
-## 🚀 Quick Start
-
-### 1. Prerequisites
-- Node.js v18+
-- PostgreSQL v14+
-
-### 2. Installation
-```bash
-# Install server dependencies
-cd server && npm install
-
-# Install client dependencies
-cd ../client && npm install
-```
-
-### 3. Environment Setup
-Create a `.env` file in the `server/` directory:
-```env
-PORT=5000
-DATABASE_URL=your_postgres_url
-JWT_SECRET=your_secure_secret
-```
-
-### 4. Database Setup & Seed
-```bash
-cd server
-node db/runSchema.js
-node db/seed.js
-```
-
-### 5. Run Locally
-```bash
-# In server directory
-npm run dev
-
-# In client directory
-npm run dev
-```
-
----
-
-## 🔑 Demo Access
-
-| Role | Email | Password |
-| :--- | :--- | :--- |
-| **Admin** | `admin@traveloop.com` | `Demo@1234` |
-| **User** | `demo@traveloop.com` | `Demo@1234` |
-
----
-
-## 🏆 Hackathon Context
-Traveloop was developed as a solution for the **OdooxParul Hackathon**, focusing on professional UI/UX, robust relational data modeling, and production-ready full-stack architecture.
+## 📜 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

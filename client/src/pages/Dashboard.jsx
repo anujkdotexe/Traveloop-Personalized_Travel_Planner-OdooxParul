@@ -110,7 +110,7 @@ export default function Dashboard() {
         {/* ── Section Header ───────────────────────── */}
         <div className="flex justify-between items-center mb-md">
           <div><h2>Your Dashboard</h2><p>Manage trips, explore destinations, and stay organized.</p></div>
-          <Link to="/create-trip" className="btn btn-primary"><PlusIcon /> Plan New Trip</Link>
+          <button onClick={() => setShowCreate(true)} className="btn btn-primary"><PlusIcon /> Plan New Trip</button>
         </div>
         <div className="toolbar">
           <div className="toolbar-search-wrap">
@@ -168,13 +168,13 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))}
-              <Link to="/create-trip" className="card flex items-center justify-center" style={{ border: '2px dashed var(--border)', background: 'transparent', cursor: 'pointer', minHeight: 280, textDecoration: 'none' }}>
+              <div onClick={() => setShowCreate(true)} className="card flex items-center justify-center" style={{ border: '2px dashed var(--border)', background: 'transparent', cursor: 'pointer', minHeight: 280, textDecoration: 'none' }}>
                 <div className="text-center">
                   <div style={{ width: 52, height: 52, background: 'var(--bg-surface-alt)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: 'var(--primary)' }}><PlusIcon /></div>
                   <h4>Start New Itinerary</h4>
                   <p style={{ fontSize: '0.85rem', marginTop: 4 }}>Plan from a blank canvas</p>
                 </div>
-              </Link>
+              </div>
             </div>
           )}
 

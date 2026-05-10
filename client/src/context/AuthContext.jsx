@@ -29,10 +29,18 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('traveloop_user');
   };
 
+  const updateUser = (newData) => {
+    const updated = { ...user, ...newData };
+    setUser(updated);
+    localStorage.setItem('traveloop_user', JSON.stringify(updated));
+  };
+
+
   const isAdmin = user?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAdmin, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUser, isAdmin, loading }}>
+
       {children}
     </AuthContext.Provider>
   );

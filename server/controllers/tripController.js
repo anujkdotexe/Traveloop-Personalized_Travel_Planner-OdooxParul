@@ -71,10 +71,18 @@ exports.createTrip = async (req, res) => {
     );
     const trip = result.rows[0];
 
-    // Create Notification
+    // Create Notification for User
     await db.query(
       'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
       [req.user.id, 'Trip Created!', `Your journey to ${title} has been initialized.`, 'trip']
+    );
+
+    // Alert admins about new trip
+    await db.query(
+      `INSERT INTO notifications (user_id, title, message, type)
+       SELECT id, 'New Trip Planned', $1 || ' just started planning a trip to ' || $2 || '.', 'system'
+       FROM users WHERE role = 'admin'`,
+      [req.user.name, title]
     );
 
     res.status(201).json({ status: 'success', data: trip });
@@ -176,6 +184,7 @@ exports.addActivity = async (req, res) => {
 exports.getTripBudget = async (req, res) => {
   const { id } = req.params;
   try {
+    // 1. Get categorized sum from expenses
     const expensesResult = await db.query(
       `SELECT category, SUM(amount) AS total
        FROM expenses
@@ -184,6 +193,14 @@ exports.getTripBudget = async (req, res) => {
        ORDER BY total DESC`,
       [id]
     );
+    
+    // 2. Get raw expense items for the invoice
+    const rawExpenses = await db.query(
+      `SELECT * FROM expenses WHERE trip_id = $1 ORDER BY date DESC`,
+      [id]
+    );
+
+    // 3. Get estimated costs from planned activities
     const activitiesCostResult = await db.query(
       `SELECT SUM(a.cost_estimate) AS activity_total
        FROM activities a
@@ -191,6 +208,7 @@ exports.getTripBudget = async (req, res) => {
        WHERE s.trip_id = $1`,
       [id]
     );
+
     const grandTotal = await db.query(
       `SELECT SUM(amount) AS grand_total FROM expenses WHERE trip_id = $1`,
       [id]
@@ -200,12 +218,29 @@ exports.getTripBudget = async (req, res) => {
       status: 'success',
       data: {
         breakdown: expensesResult.rows,
+        expenses: rawExpenses.rows,
         activity_cost: activitiesCostResult.rows[0].activity_total || 0,
         grand_total: grandTotal.rows[0].grand_total || 0,
       },
     });
   } catch (err) {
     res.status(500).json({ status: 'error', message: 'Failed to get budget.' });
+  }
+};
+
+// ─── Add a new expense ───────────────────────────────────────────────────────
+exports.addExpense = async (req, res) => {
+  const { trip_id, category, amount, currency, date, description } = req.body;
+  try {
+    const result = await db.query(
+      `INSERT INTO expenses (trip_id, category, amount, currency, date)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [trip_id, category, amount, currency || 'INR', date || new Date()]
+    );
+    res.status(201).json({ status: 'success', data: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: 'Failed to add expense.' });
   }
 };
 

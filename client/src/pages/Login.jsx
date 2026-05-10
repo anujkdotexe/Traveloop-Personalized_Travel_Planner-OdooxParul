@@ -63,7 +63,8 @@ export default function Login() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Login failed.');
       login(data.user, data.token);
-      navigate('/dashboard');
+      if (data.user.role === 'admin') navigate('/admin');
+      else navigate('/dashboard');
     } catch (err) {
       showToast(err.message, 'error');
     } finally {

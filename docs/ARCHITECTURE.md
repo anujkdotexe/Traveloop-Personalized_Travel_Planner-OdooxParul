@@ -1,81 +1,51 @@
 # Traveloop System Architecture
 
-This document describes the high-level architecture, technology stack, and design patterns used in the Traveloop platform.
+Traveloop is a modern, full-stack travel planning platform built with a decoupled architecture for scalability and performance.
 
-## System Architecture Diagram
+## Technology Stack
+- **Frontend**: React.js with Vite
+- **Styling**: Vanilla CSS (Custom Design System)
+- **State Management**: React Context API
+- **Backend**: Node.js with Express
+- **Database**: PostgreSQL
+- **Deployment**: Vercel (Frontend) + Render (Backend)
+
+## Architecture Diagram
 
 ```mermaid
 graph TD
-    User((User))
+    User((User)) -->|HTTPS| Frontend[React SPA]
+    Frontend -->|API Calls| API[Express API Server]
+    API -->|Auth| JWT[JWT Validation]
+    API -->|Query| DB[(PostgreSQL)]
     
-    subgraph "Frontend Layer (Vercel)"
-        UI[React 18 SPA]
-        V_Rewrites[Vercel Rewrites / Proxy]
+    subgraph "External Services"
+        Unsplash[Unsplash API - Imagery]
+        Dicebear[Dicebear - Avatars]
+        Exchange[Currency Exchange API]
     end
     
-    subgraph "Backend Layer (Render)"
-        API[Express.js API Server]
-        Auth[JWT/Bcrypt Auth]
-        Notify[Notification Service]
-        Admin[Admin Analytics Service]
-    end
-    
-    subgraph "Data Layer (Render Managed)"
-        DB[(PostgreSQL Database)]
-    end
-    
-    User <-->|HTTPS| UI
-    UI <-->|/api Proxy| V_Rewrites
-    V_Rewrites <-->|Internal HTTP| API
-    API <--> Auth
-    API <--> Notify
-    API <--> Admin
-    API <-->|SQL Queries| DB
+    Frontend --> Unsplash
+    Frontend --> Dicebear
+    Frontend --> Exchange
 ```
 
-## Technology Stack
+## Core Modules
 
-### Frontend (Client)
-- **Framework**: React 18 (Vite-powered)
-- **State Management**: React Context API (`AuthContext`, `CurrencyContext`)
-- **Routing**: React Router v6 (SPA)
-- **Styling**: Vanilla CSS with the "Premium Voyage" design system
-- **Charts**: Chart.js for Admin and Budget analytics
+### 1. Trip Builder Engine
+A complex state machine that manages the hierarchical relationship between Trips, Stops, and Activities. It ensures chronological consistency and manages cost estimations in real-time.
 
-### Backend (Server)
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: PostgreSQL (Relational)
-- **Authentication**: JWT (JSON Web Tokens) with `bcryptjs` (Cost factor 12)
-- **Environment**: Dotenv for secure configuration
+### 2. Financial Tracking
+Consolidates planned activity costs and actual recorded expenses to provide a comprehensive budget health overview. It features an automated invoice generation system for trip settlement.
 
-## Design Patterns
+### 3. Contextual Data Sync
+Uses React Context to share authentication state and live currency conversion rates across all components, ensuring a consistent user experience without redundant API calls.
 
-### 1. Middleware Chain (Backend)
-The backend uses a chain of responsibility pattern for authentication and authorization:
-- `verifyToken`: Decodes JWT and attaches the user payload to `req.user`.
-- `verifyAdmin`: Checks the `role` field in the payload to restrict access to management routes.
+### 4. Admin Command Center
+A restricted dashboard for platform oversight, featuring real-time usage analytics, user management, and system-wide notification broadcasting.
 
-### 2. Single Source of Truth (Database)
-The platform follows a strict relational model. Analytics (e.g., top destinations, user growth) are calculated using live SQL aggregations rather than redundant fields, ensuring data consistency.
-
-### 3. SPA Pattern (Frontend)
-The application is a Single Page Application. To support direct links and page refreshes on hosting providers like Vercel/Netlify, a rewrite rule is implemented:
-- `vercel.json` redirects all non-file requests to `index.html`.
-
-## Deployment Flow
-
-### Local Development
-1. `npm run dev` in `server` (Port 5000)
-2. `npm run dev` in `client` (Port 5173 - Proxied to 5000)
-
-### Production
-- **Database**: Render PostgreSQL (Managed)
-- **Backend**: Render Web Service (linked to `main` branch)
-- **Frontend**: Vercel (rewrites `/api` to the Render backend)
-
-## Security Model
-- All passwords are encrypted with **Bcrypt (cost factor 12)**.
-- JWT tokens expire in **8 hours** and are required for all non-public routes.
-- **CORS** is restricted to the specific frontend origin in production.
-- **SQL Injection** protection via `pg` parameterized queries.
+## Deployment Strategy
+The application follows a standard CI/CD pipeline:
+1. **Source Control**: GitHub (Branch: `Second`)
+2. **Backend**: Render.com (Connected to Managed PostgreSQL)
+3. **Frontend**: Vercel.com (Handles SPA routing and Static Assets)

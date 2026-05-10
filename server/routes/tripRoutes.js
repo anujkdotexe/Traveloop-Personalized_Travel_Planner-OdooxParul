@@ -16,6 +16,7 @@ router.post('/activity',  verifyUser, tc.addActivity);
 
 // ─── Budget ──────────────────────────────────────────────────────────────────
 router.get('/:id/budget', verifyUser, tc.getTripBudget);
+router.post('/expenses',    verifyUser, tc.addExpense);
 
 // ─── Checklist ───────────────────────────────────────────────────────────────
 router.get('/:id/checklist',              verifyUser, tc.getChecklist);

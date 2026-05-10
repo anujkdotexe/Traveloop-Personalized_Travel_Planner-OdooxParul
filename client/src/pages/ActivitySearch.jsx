@@ -58,7 +58,6 @@ export default function ActivitySearch() {
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get('tripId');
   const { toasts, showToast, dismissToast } = useToast();
-  const { ratesLoaded, lastUpdated } = useCurrency();
 
   const matchesCost = (act) => {
     if (costFilter === 'Any Cost') return true;
@@ -97,6 +96,7 @@ export default function ActivitySearch() {
 
   const CATEGORY_COLORS = { sightseeing: 'var(--primary)', culture: '#8b5cf6', dining: 'var(--secondary)', food: '#f59e0b', adventure: 'var(--accent)' };
 
+
   return (
     <>
       <Navbar />
@@ -107,12 +107,8 @@ export default function ActivitySearch() {
             <h1>Activity Search</h1>
             <p>Browse and add experiences to enrich your trip. {activities.length} activities found.</p>
           </div>
-          {ratesLoaded && (
-            <div style={{ marginLeft: 'auto', fontSize: '0.78rem', fontWeight: 600, color: 'var(--secondary)', background: 'var(--secondary-light)', padding: '6px 14px', borderRadius: 'var(--radius-full)', whiteSpace: 'nowrap' }}>
-              Live rates active &mdash; {lastUpdated}
-            </div>
-          )}
         </div>
+
 
         {/* ── Filters ─────────────────────────────── */}
         <div className="card" style={{ padding: '1.5rem', marginBottom: 'var(--space-lg)' }}>
@@ -189,7 +185,8 @@ export default function ActivitySearch() {
                       <span className="flex items-center gap-xs"><ClockIcon /> {act.duration}</span>
                       <span style={{ fontWeight: 600, fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{act.city}</span>
                     </div>
-                    <CurrencyBadge amount={act.cost} currency={act.currency || CITY_CURRENCY[act.city] || 'USD'} size="md" />
+                    <CurrencyBadge amount={act.cost} country={act.city === 'Paris' ? 'France' : act.city === 'Tokyo' ? 'Japan' : act.city === 'London' ? 'UK' : act.city === 'Rome' ? 'Italy' : act.city === 'Dubai' ? 'UAE' : 'Spain'} size="md" />
+
                   </div>
                   <button className={`btn w-full ${added[act.id] ? 'btn-secondary' : 'btn-primary'}`} onClick={() => !added[act.id] && handleAdd(act)}>
                     {added[act.id] ? <><CheckIcon /> Added to Itinerary</> : <><PlusIcon /> Add to Itinerary</>}

@@ -13,13 +13,73 @@ const PinIcon = () => <svg className="icon icon-sm" viewBox="0 0 24 24"><path d=
 const EyeIcon = () => <svg className="icon icon-sm" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
 
 export default function Profile() {
-  const { user } = useAuth();
-  const [form, setForm] = useState({ name: user?.name || 'Anuj Kondawar', email: user?.email || 'anuj@example.com', bio: 'Exploring the world one itinerary at a time.', language: 'English' });
+  const { user, token, updateUser, logout } = useAuth();
+  const [form, setForm] = useState({ 
+    name: user?.name || '', 
+    email: user?.email || '', 
+    bio: user?.bio || '', 
+    language: user?.language_preference || 'English' 
+  });
   const [errors, setErrors] = useState({});
   const { toasts, showToast, dismissToast } = useToast();
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const set = (f) => (e) => setForm(p => ({ ...p, [f]: e.target.value }));
   const savedDests = ['Tokyo, Japan', 'Rome, Italy', 'New York, USA'];
-  const handleSave = (e) => { e.preventDefault(); const errs = {}; if (!form.name.trim()) errs.name = 'Name is required.'; if (!form.email.trim()) errs.email = 'Email is required.'; if (Object.keys(errs).length) { setErrors(errs); return; } showToast('Profile updated successfully.', 'success'); };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    const errs = {};
+    if (!form.name.trim()) errs.name = 'Name is required.';
+    if (!form.email.trim()) errs.email = 'Email is required.';
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+
+    try {
+      const res = await fetch('/api/auth/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          bio: form.bio,
+          language_preference: form.language
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        updateUser(data.data);
+        showToast('Profile updated successfully.', 'success');
+      } else {
+        showToast(data.message || 'Update failed.', 'error');
+      }
+    } catch (err) {
+      showToast('Network error.', 'error');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to permanently delete your account? This action cannot be undone.')) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch('/api/auth/account', {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        logout();
+        window.location.href = '/login';
+      } else {
+        showToast('Failed to delete account.', 'error');
+      }
+    } catch (err) {
+      showToast('Network error.', 'error');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const PREPLANNED = [
     { id: 101, title: 'Greek Islands', dates: 'Aug 10 – Aug 22', stops: 3, color: '#6366f1' },
@@ -105,7 +165,10 @@ export default function Profile() {
             <div className="card" style={{ borderColor: 'var(--accent)', background: 'var(--accent-light)' }}>
               <h4 style={{ color: 'var(--accent)', marginBottom: '0.5rem' }}>Danger Zone</h4>
               <p style={{ fontSize: '0.85rem', marginBottom: '1rem' }}>Permanently delete your account and all data. This cannot be undone.</p>
-              <button className="btn btn-danger w-full"><TrashIcon /> Delete Account</button>
+              <button className="btn btn-danger w-full" onClick={handleDelete} disabled={isDeleting}>
+                <TrashIcon /> {isDeleting ? 'Deleting...' : 'Delete Account'}
+              </button>
+
             </div>
           </div>
         </div>
