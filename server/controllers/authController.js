@@ -4,41 +4,71 @@ const jwt = require('jsonwebtoken');
 
 // User Registration
 exports.register = async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password } = req.body;
+  if (!name || !email || !password)
+    return res.status(400).json({ message: 'Name, email, and password are required.' });
+  if (password.length < 8)
+    return res.status(400).json({ message: 'Password must be at least 8 characters.' });
+
   try {
-    const salt = await bcrypt.genSalt(10);
+    // Check if email already exists
+    const exists = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (exists.rows.length > 0)
+      return res.status(409).json({ message: 'An account with that email already exists.' });
+
+    const salt = await bcrypt.genSalt(12);          // cost factor 12 for security
     const hashedPassword = await bcrypt.hash(password, salt);
-    
+
     const result = await db.query(
-      'INSERT INTO users (name, email, password_hash, profile_image_url) VALUES ($1, $2, $3, $4) RETURNING id, name, email',
-      [name, email, hashedPassword, 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + name]
+      `INSERT INTO users (name, email, password_hash, role, profile_image_url)
+       VALUES ($1, $2, $3, 'user', $4)
+       RETURNING id, name, email, role`,
+      [name, email, hashedPassword, 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(name)]
     );
 
     res.status(201).json({ status: 'success', data: result.rows[0] });
   } catch (err) {
-    res.status(500).json({ status: 'error', message: err.message });
+    res.status(500).json({ status: 'error', message: 'Registration failed. Please try again.' });
   }
 };
 
 // User Login
 exports.login = async (req, res) => {
   const { email, password } = req.body;
+  if (!email || !password)
+    return res.status(400).json({ message: 'Email and password are required.' });
+
   try {
-    const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-    if (result.rows.length === 0) return res.status(404).json({ message: 'User not found' });
+    const result = await db.query(
+      'SELECT id, name, email, role, password_hash, profile_image_url FROM users WHERE email = $1',
+      [email]
+    );
+    if (result.rows.length === 0)
+      return res.status(404).json({ message: 'No account found with that email address.' });
 
     const user = result.rows[0];
     const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!isMatch)
+      return res.status(401).json({ message: 'Incorrect password. Please try again.' });
 
     const token = jwt.sign(
-      { id: user.id, role: user.email.includes('admin') ? 'admin' : 'user' },
+      { id: user.id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
     );
 
-    res.json({ status: 'success', token, user: { id: user.id, name: user.name, email: user.email } });
+    res.json({
+      status: 'success',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profileImage: user.profile_image_url,
+      },
+    });
   } catch (err) {
-    res.status(500).json({ status: 'error', message: err.message });
+    res.status(500).json({ status: 'error', message: 'Login failed. Please try again.' });
   }
 };
