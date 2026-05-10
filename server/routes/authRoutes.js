@@ -16,6 +16,9 @@ router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
 router.patch('/profile', verifyUser, authController.updateProfile);
 router.delete('/account', verifyUser, authController.deleteAccount);
+router.get('/saved-destinations', verifyUser, authController.getSavedDestinations);
+router.post('/saved-destinations', verifyUser, authController.addSavedDestination);
+router.delete('/saved-destinations/:destinationId', verifyUser, authController.deleteSavedDestination);
 
 module.exports = router;
 

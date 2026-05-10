@@ -145,3 +145,37 @@ exports.getUserTrips = async (req, res) => {
     res.status(500).json({ status: 'error', message: 'Failed to retrieve user trips.' });
   }
 };
+
+exports.updateTripModeration = async (req, res) => {
+  const { tripId } = req.params;
+  const { is_public, status } = req.body;
+  try {
+    const result = await db.query(
+      `UPDATE trips
+       SET is_public = COALESCE($1, is_public),
+           status = COALESCE($2, status)
+       WHERE id = $3
+       RETURNING *`,
+      [typeof is_public === 'boolean' ? is_public : null, status || null, tripId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'Trip not found.' });
+    }
+    res.json({ status: 'success', data: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: 'Failed to update trip moderation.' });
+  }
+};
+
+exports.deleteTripModeration = async (req, res) => {
+  const { tripId } = req.params;
+  try {
+    const result = await db.query('DELETE FROM trips WHERE id = $1 RETURNING id', [tripId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'Trip not found.' });
+    }
+    res.json({ status: 'success', message: 'Trip removed.' });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: 'Failed to delete trip.' });
+  }
+};

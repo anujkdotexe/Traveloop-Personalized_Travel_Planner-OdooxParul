@@ -11,6 +11,11 @@ CREATE TABLE IF NOT EXISTS users (
     profile_image_url TEXT,
     bio TEXT,
     language_preference VARCHAR(20) DEFAULT 'English',
+    phone VARCHAR(30),
+    city VARCHAR(100),
+    country VARCHAR(100),
+    reset_token TEXT,
+    reset_token_expiry TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -83,6 +88,16 @@ CREATE TABLE IF NOT EXISTS notes (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Saved Destinations
+CREATE TABLE IF NOT EXISTS saved_destinations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    destination_name VARCHAR(255) NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    image_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_trips_user_id ON trips(user_id);
@@ -90,6 +105,7 @@ CREATE INDEX IF NOT EXISTS idx_stops_trip_id ON stops(trip_id);
 CREATE INDEX IF NOT EXISTS idx_activities_stop_id ON activities(stop_id);
 CREATE INDEX IF NOT EXISTS idx_expenses_trip_id ON expenses(trip_id);
 CREATE INDEX IF NOT EXISTS idx_checklists_trip_id ON checklists(trip_id);
+CREATE INDEX IF NOT EXISTS idx_saved_destinations_user_id ON saved_destinations(user_id);
 
 -- Notifications
 CREATE TABLE IF NOT EXISTS notifications (

@@ -146,6 +146,53 @@ exports.deleteAccount = async (req, res) => {
   }
 };
 
+exports.getSavedDestinations = async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT * FROM saved_destinations WHERE user_id = $1 ORDER BY created_at DESC',
+      [req.user.id]
+    );
+    res.json({ status: 'success', data: result.rows });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: 'Failed to fetch saved destinations.' });
+  }
+};
+
+exports.addSavedDestination = async (req, res) => {
+  const { destination_name, country, image_url } = req.body;
+  if (!destination_name || !country) {
+    return res.status(400).json({ status: 'error', message: 'Destination name and country are required.' });
+  }
+
+  try {
+    const result = await db.query(
+      `INSERT INTO saved_destinations (user_id, destination_name, country, image_url)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [req.user.id, destination_name, country, image_url || null]
+    );
+    res.status(201).json({ status: 'success', data: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: 'Failed to save destination.' });
+  }
+};
+
+exports.deleteSavedDestination = async (req, res) => {
+  const { destinationId } = req.params;
+  try {
+    const result = await db.query(
+      'DELETE FROM saved_destinations WHERE id = $1 AND user_id = $2 RETURNING id',
+      [destinationId, req.user.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'Destination not found.' });
+    }
+    res.json({ status: 'success', message: 'Saved destination removed.' });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: 'Failed to remove saved destination.' });
+  }
+};
+
 // Forgot Password
 const crypto = require('crypto');
 exports.forgotPassword = async (req, res) => {

@@ -124,6 +124,35 @@ export default function Admin() {
     }
   };
 
+  const updateTrip = async (tripId, payload) => {
+    try {
+      const res = await fetch(`/api/admin/trips/${tripId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setUserTrips(prev => prev.map(t => t.id === tripId ? updated.data : t));
+      }
+    } catch (err) {
+      console.error('Trip moderation failed.', err);
+    }
+  };
+
+  const removeTrip = async (tripId) => {
+    if (!window.confirm('Delete this trip permanently?')) return;
+    try {
+      const res = await fetch(`/api/admin/trips/${tripId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) setUserTrips(prev => prev.filter(t => t.id !== tripId));
+    } catch (err) {
+      console.error('Trip delete failed.', err);
+    }
+  };
+
   const toggleStatus = async (id) => {
     try {
       const res = await fetch(`/api/admin/users/${id}/status`, {
@@ -198,7 +227,7 @@ export default function Admin() {
         <div className="grid" style={{ gridTemplateColumns: '1fr 1.5fr', gap: 'var(--space-lg)' }}>
           <div className="card">
             <h3 style={{ marginBottom: '1.5rem' }}>Top Destinations</h3>
-            {stats?.top_cities.map((city, i) => (
+            {(stats?.top_cities || []).map((city, i) => (
               <div key={i} className="flex justify-between items-center" style={{ padding: '0.9rem 0', borderBottom: i < stats.top_cities.length-1 ? '1px solid var(--border)' : 'none' }}>
                 <div className="flex items-center gap-md">
                   <span style={{ width: 28, height: 28, background: 'var(--bg-surface-alt)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8rem', color: 'var(--text-muted)' }}>{String(i+1).padStart(2,'0')}</span>
@@ -207,6 +236,7 @@ export default function Admin() {
                 <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.9rem' }}>{city.trip_count} trips</span>
               </div>
             ))}
+            {!stats?.top_cities?.length && <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No destination analytics yet.</p>}
           </div>
           
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -261,7 +291,15 @@ export default function Admin() {
                     <td style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', fontWeight: 600 }}>{t.title}</td>
                     <td style={{ padding: '0.75rem 1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{new Date(t.start_date).toLocaleDateString()} - {new Date(t.end_date).toLocaleDateString()}</td>
                     <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>{t.stop_count}</td>
-                    <td style={{ padding: '0.75rem 1rem' }}><span className="badge badge-ongoing" style={{ fontSize: '0.65rem' }}>{t.status}</span></td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <div className="flex items-center gap-xs" style={{ flexWrap: 'wrap' }}>
+                        <span className="badge badge-ongoing" style={{ fontSize: '0.65rem' }}>{t.status}</span>
+                        <button className="btn btn-outline btn-sm" onClick={() => updateTrip(t.id, { is_public: !t.is_public })}>
+                          {t.is_public ? 'Make Private' : 'Make Public'}
+                        </button>
+                        <button className="btn btn-danger btn-sm" onClick={() => removeTrip(t.id)}>Remove</button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
                 {userTrips.length === 0 && <tr><td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No trips found for this user.</td></tr>}

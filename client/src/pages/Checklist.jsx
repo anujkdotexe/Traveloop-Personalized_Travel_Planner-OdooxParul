@@ -117,12 +117,14 @@ export default function Checklist() {
     };
     
     // Group by Category (Default)
-    return filteredAndSorted.reduce((acc, item) => {
+    const groupedItems = filteredAndSorted.reduce((acc, item) => {
       const cat = item.category || 'General';
       if (!acc[cat]) acc[cat] = [];
       acc[cat].push(item);
       return acc;
     }, {});
+
+    return Object.keys(groupedItems).length > 0 ? groupedItems : { General: [] };
   }, [filteredAndSorted, groupBy]);
 
   const packed = items.filter(i => i.is_packed).length;
@@ -176,31 +178,42 @@ export default function Checklist() {
           <p style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>{packed} of {items.length} items packed</p>
         </div>
 
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: '1.5rem' }}>
-          {Object.entries(grouped).map(([cat, its]) => (
-            <div key={cat} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-              <div className="flex justify-between items-center" style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface-alt)' }}>
-                <span style={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>{cat}</span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{its.length} items</span>
-              </div>
-              {its.map(item => (
-                <div key={item.id} className="check-item">
-                  <div className={`checkbox-custom${item.is_packed ? ' checked' : ''}`} onClick={() => toggle(item.id)}>
-                    {item.is_packed && <CheckIcon />}
-                  </div>
-                  <span style={{ flex: 1, textDecoration: item.is_packed ? 'line-through' : 'none', color: item.is_packed ? 'var(--text-muted)' : 'var(--text-main)', fontSize: '0.92rem' }}>{item.item_name}</span>
-                  <button className="btn btn-ghost btn-icon-sm no-print" onClick={() => removeItem(item.id)} style={{ color: 'var(--border)' }}><TrashIcon /></button>
-                </div>
-              ))}
-              {groupBy === 'Category' && (
-                <div style={{ padding: '0.75rem 1.25rem', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }} className="no-print">
-                  <input className="input-field" style={{ flex: 1, padding: '8px 12px', fontSize: '0.85rem' }} placeholder={`Add to ${cat}...`} value={activeCategory === cat ? newItem : ''} onFocus={() => setActiveCategory(cat)} onChange={e => setNewItem(e.target.value)} onKeyDown={e => e.key === 'Enter' && addItem(cat)} />
-                  <button className="btn btn-primary btn-sm" onClick={() => addItem(cat)}><PlusIcon /></button>
-                </div>
-              )}
+        {items.length === 0 ? (
+          <div className="card" style={{ padding: '2rem', textAlign: 'center' }}>
+            <h4 style={{ marginBottom: 8 }}>Your checklist is empty</h4>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '1.25rem' }}>Add a first item to start building this trip's packing list.</p>
+            <div className="flex gap-sm" style={{ maxWidth: 520, margin: '0 auto' }}>
+              <input className="input-field" style={{ flex: 1 }} placeholder="Add a packing item..." value={newItem} onChange={e => setNewItem(e.target.value)} onFocus={() => setActiveCategory('General')} onKeyDown={e => e.key === 'Enter' && addItem('General')} />
+              <button className="btn btn-primary" onClick={() => addItem('General')}><PlusIcon /> Add</button>
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: '1.5rem' }}>
+            {Object.entries(grouped).map(([cat, its]) => (
+              <div key={cat} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="flex justify-between items-center" style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface-alt)' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>{cat}</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{its.length} items</span>
+                </div>
+                {its.map(item => (
+                  <div key={item.id} className="check-item">
+                    <div className={`checkbox-custom${item.is_packed ? ' checked' : ''}`} onClick={() => toggle(item.id)}>
+                      {item.is_packed && <CheckIcon />}
+                    </div>
+                    <span style={{ flex: 1, textDecoration: item.is_packed ? 'line-through' : 'none', color: item.is_packed ? 'var(--text-muted)' : 'var(--text-main)', fontSize: '0.92rem' }}>{item.item_name}</span>
+                    <button className="btn btn-ghost btn-icon-sm no-print" onClick={() => removeItem(item.id)} style={{ color: 'var(--border)' }}><TrashIcon /></button>
+                  </div>
+                ))}
+                {groupBy === 'Category' && (
+                  <div style={{ padding: '0.75rem 1.25rem', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }} className="no-print">
+                    <input className="input-field" style={{ flex: 1, padding: '8px 12px', fontSize: '0.85rem' }} placeholder={`Add to ${cat}...`} value={activeCategory === cat ? newItem : ''} onFocus={() => setActiveCategory(cat)} onChange={e => setNewItem(e.target.value)} onKeyDown={e => e.key === 'Enter' && addItem(cat)} />
+                    <button className="btn btn-primary btn-sm" onClick={() => addItem(cat)}><PlusIcon /></button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <Modal isOpen={showResetConfirm} onClose={() => setShowResetConfirm(false)} title="Reset Checklist" maxWidth="420px">

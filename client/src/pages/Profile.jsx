@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
@@ -26,9 +26,19 @@ export default function Profile() {
   const { toasts, showToast, dismissToast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [savedDestinations, setSavedDestinations] = useState([]);
 
   const set = (f) => (e) => setForm(p => ({ ...p, [f]: e.target.value }));
-  const savedDests = ['Tokyo, Japan', 'Rome, Italy', 'New York, USA'];
+
+  useEffect(() => {
+    if (!token) return;
+    fetch('/api/auth/saved-destinations', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(d => { if (d.status === 'success') setSavedDestinations(d.data || []); })
+      .catch(() => {});
+  }, [token]);
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
@@ -177,13 +187,14 @@ export default function Profile() {
           <div>
             <div className="card" style={{ marginBottom: 'var(--space-lg)' }}>
               <h3 style={{ marginBottom: '1.25rem' }}>Saved Destinations</h3>
-              {savedDests.map(dest => (
-                <div key={dest} className="flex justify-between items-center" style={{ padding: '0.75rem 0', borderBottom: '1px solid var(--border)' }}>
-                  <div className="flex items-center gap-sm"><span style={{ color: 'var(--accent)' }}><HeartIcon /></span><span style={{ fontWeight: 600, fontSize: '0.88rem' }}>{dest}</span></div>
-                  <button className="btn btn-ghost btn-icon-sm" style={{ color: 'var(--text-muted)' }}><TrashIcon /></button>
+              {savedDestinations.slice(0, 3).map(dest => (
+                <div key={dest.id} className="flex justify-between items-center" style={{ padding: '0.75rem 0', borderBottom: '1px solid var(--border)' }}>
+                  <div className="flex items-center gap-sm"><span style={{ color: 'var(--accent)' }}><HeartIcon /></span><span style={{ fontWeight: 600, fontSize: '0.88rem' }}>{dest.destination_name}, {dest.country}</span></div>
+                  <button className="btn btn-ghost btn-icon-sm" style={{ color: 'var(--text-muted)' }} onClick={() => navigate('/saved-destinations')}><TrashIcon /></button>
                 </div>
               ))}
-              <button className="btn btn-outline w-full" style={{ marginTop: '1rem' }} onClick={() => navigate('/saved-destinations')}>Add Destination</button>
+              {savedDestinations.length === 0 && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No saved destinations yet.</p>}
+              <button className="btn btn-outline w-full" style={{ marginTop: '1rem' }} onClick={() => navigate('/saved-destinations')}>Manage Saved Destinations</button>
             </div>
             <div className="card" style={{ borderColor: 'var(--accent)', background: 'var(--accent-light)' }}>
               <h4 style={{ color: 'var(--accent)', marginBottom: '0.5rem' }}>Danger Zone</h4>

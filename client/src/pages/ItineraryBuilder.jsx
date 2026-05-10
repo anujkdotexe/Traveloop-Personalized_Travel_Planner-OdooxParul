@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
+import Dropdown from '../components/Dropdown';
 import { useAuth } from '../context/AuthContext';
 import { useToast, ToastContainer } from '../components/Toast';
 import CurrencyBadge from '../components/CurrencyBadge';
@@ -142,6 +143,24 @@ export default function ItineraryBuilder() {
     }
   };
 
+  const deleteActivity = async (activityId) => {
+    try {
+      const res = await fetch(`/api/trips/activity/${activityId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        showToast('Activity removed.', 'success');
+        fetchTrip();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.message || 'Failed to delete activity.', 'error');
+      }
+    } catch (err) {
+      showToast('Failed to delete activity.', 'error');
+    }
+  };
+
   if (loading) return <div className="loading-center">Loading...</div>;
 
   return (
@@ -210,7 +229,46 @@ export default function ItineraryBuilder() {
                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                   <CurrencyBadge amount={act.cost_estimate} country={country} size="md" />
 
-                  <button className="btn btn-ghost btn-icon-sm"><MoreIcon /></button>
+                  <Dropdown
+                    trigger={() => (
+                      <button type="button" className="btn btn-ghost btn-icon-sm" aria-label="Activity actions">
+                        <MoreIcon />
+                      </button>
+                    )}
+                    width="180px"
+                  >
+                    {(close) => (
+                      <div style={{ padding: 8 }}>
+                        <button
+                          className="btn btn-ghost btn-sm w-full"
+                          style={{ justifyContent: 'flex-start' }}
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(`${act.activity_name} - ${act.scheduled_time || 'No time'} - ${act.category || 'General'}`);
+                              showToast('Activity details copied.', 'success');
+                            } catch {
+                              showToast('Could not copy activity details.', 'error');
+                            }
+                            close();
+                          }}
+                        >
+                          Copy details
+                        </button>
+                        <button
+                          className="btn btn-danger btn-sm w-full"
+                          style={{ justifyContent: 'flex-start', marginTop: 6 }}
+                          onClick={async () => {
+                            close();
+                            if (window.confirm(`Delete ${act.activity_name}?`)) {
+                              await deleteActivity(act.id);
+                            }
+                          }}
+                        >
+                          Delete activity
+                        </button>
+                      </div>
+                    )}
+                  </Dropdown>
                 </div>
               </div>
             )) : (

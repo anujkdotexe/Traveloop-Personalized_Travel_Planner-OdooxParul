@@ -1,5 +1,20 @@
 const db = require('../db/db');
 
+const DEFAULT_CHECKLIST_ITEMS = [
+  { item_name: 'Passport / ID', category: 'Essentials' },
+  { item_name: 'Phone Charger', category: 'Electronics' },
+  { item_name: 'Wallet / Cards', category: 'Essentials' },
+];
+
+async function seedDefaultChecklist(tripId) {
+  for (const item of DEFAULT_CHECKLIST_ITEMS) {
+    await db.query(
+      'INSERT INTO checklists (trip_id, item_name, category) VALUES ($1, $2, $3)',
+      [tripId, item.item_name, item.category]
+    );
+  }
+}
+
 // ─── Get all trips for the authenticated user ───────────────────────────────
 exports.getUserTrips = async (req, res) => {
   try {
@@ -74,6 +89,8 @@ exports.createTrip = async (req, res) => {
       [req.user.id, title, start_date, end_date, description || null, is_public || false]
     );
     const trip = result.rows[0];
+
+    await seedDefaultChecklist(trip.id);
 
     // Create Notification for User
     await db.query(
@@ -456,9 +473,49 @@ exports.copyTrip = async (req, res) => {
       }
     }
 
+    const originalChecklist = await db.query(
+      'SELECT item_name, category, is_packed FROM checklists WHERE trip_id = $1 ORDER BY category, created_at',
+      [id]
+    );
+    if (originalChecklist.rows.length > 0) {
+      for (const item of originalChecklist.rows) {
+        await db.query(
+          'INSERT INTO checklists (trip_id, item_name, category, is_packed) VALUES ($1, $2, $3, $4)',
+          [newTripId, item.item_name, item.category, item.is_packed]
+        );
+      }
+    } else {
+      await seedDefaultChecklist(newTripId);
+    }
+
     res.json({ status: 'success', data: newTrip.rows[0], message: 'Trip copied successfully!' });
   } catch (err) {
     res.status(500).json({ status: 'error', message: 'Failed to copy trip.' });
+  }
+};
+
+// ─── Delete an activity ─────────────────────────────────────────────────────
+exports.deleteActivity = async (req, res) => {
+  const { activityId } = req.params;
+  try {
+    const result = await db.query(
+      `DELETE FROM activities a
+       USING stops s, trips t
+       WHERE a.id = $1
+         AND a.stop_id = s.id
+         AND s.trip_id = t.id
+         AND t.user_id = $2
+       RETURNING a.id`,
+      [activityId, req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'Activity not found.' });
+    }
+
+    res.json({ status: 'success', message: 'Activity deleted.' });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: 'Failed to delete activity.' });
   }
 };
 

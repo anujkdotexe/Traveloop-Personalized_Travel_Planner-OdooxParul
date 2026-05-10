@@ -17,5 +17,7 @@ router.get('/users/:userId/trips', verifyAdmin, ac.getUserTrips);
 router.patch('/users/:id/status',  verifyAdmin, ac.toggleUserStatus);
 router.patch('/users/:id/role',    verifyAdmin, ac.updateUserRole);
 router.delete('/users/:userId',   verifyAdmin, ac.deleteUser);
+router.patch('/trips/:tripId',     verifyAdmin, ac.updateTripModeration);
+router.delete('/trips/:tripId',    verifyAdmin, ac.deleteTripModeration);
 
 module.exports = router;
